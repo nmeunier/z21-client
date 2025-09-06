@@ -1,0 +1,53 @@
+{
+  "name": "z21-client",
+  "version": "1.0.0",
+  "description": "TypeScript UDP client for Roco/Fleischmann Z21 DCC command station",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nmeunier/z21-client.git"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node-dev --respawn exemples/index.ts",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": [
+    "dcc",
+    "z21",
+    "roco",
+    "fleischmann",
+    "model-railway",
+    "model-train",
+    "railroad",
+    "train-control",
+    "locomotive",
+    "turnout",
+    "accessory",
+    "decoder",
+    "cv",
+    "udp",
+    "typescript",
+    "nodejs"
+  ],
+  "author": "Nicolas Meunier",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "eslint": "^9.33.0",
+    "eslint-plugin-jest": "^29.0.1",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "ts-node": "^10.0.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist"
+  ]
+}

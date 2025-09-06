@@ -1,0 +1,12 @@
+"files": [
+  "src/",
+  "tests/",
+  "exemples/",
+  "*.test.ts",
+  "*.spec.ts",
+  "[tsconfig.json](http://_vscodecontentref_/11)",
+  "[jest.config.js](http://_vscodecontentref_/12)",
+  ".eslintrc",
+  ".eslintignore",
+  ".gitignore"
+]
