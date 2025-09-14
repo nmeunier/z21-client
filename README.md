@@ -1,7 +1,8 @@
 # z21-client
 
-z21-client is a Node.js library written in TypeScript that implements the UDP protocol of the Roco/Fleischmann Z21 DCC command station.
+z21-client is a Node.js library written in TypeScript that implements the Roco/Fleischmann Z21 DCC command station.
 It provides a strongly-typed, event-driven API to control locomotives and accessories, read and write CVs, and monitor system events in real time.
+Connection to the Z21 command station is performed over the LAN (Ethernet/UDP).
 
 ---
 
@@ -109,6 +110,7 @@ new Z21Client(host: string, port?: number, debug?: boolean)
 - `"engineInfo"`: Engine info updates
 - `"cvResult"`: CV read/write result
 - `"accessoryInfo"`: Accessory/turnout info
+- `"feedback"`: Feedback module updates ()
 - `"unknownBroadcast"`: Unknown broadcast received
 - `"error"`: UDP or protocol errors
 - `"debug"`: Debug messages

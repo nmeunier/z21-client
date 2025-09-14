@@ -1,7 +1,6 @@
 // tests/Z21ClientProg.test.ts
 import { Z21Client } from "../src/Z21Client";
 import dgram from "dgram";
-import { FeedbackParser } from "../src/parsers/feedbackParser";
 
 jest.mock("dgram");
 
