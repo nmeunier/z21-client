@@ -411,5 +411,50 @@ describe("FeedbackParser", () => {
     });
   });
 
+  it("should parse LAN_RMBUS_DATACHANGED with groupIndex = 0", () => {
+    // DataLen (2 bytes LE), header (0x80, 0x00), groupIndex (0), 10 bytes feedback status
+    const payload = Buffer.from([
+      0x0F, 0x00, // DataLen = 15 (correct per Z21 spec)
+      0x80, 0x00, // Header: opcode 0x80, 0x00
+      0x00,       // groupIndex = 0 (modules 1-10)
+      0x01,       // module 1: input 1 active (bit 0)
+      0x00,       // module 2: no input active
+      0xC5,       // module 3: 0b11000101 => inputs 1,3,7,8 active
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 // modules 4-10: no input active
+    ]);
+    const parser = new FeedbackParser();
+    const result = parser.parse(payload);
+    expect(result).toEqual({
+      type: "feedback",
+      value: [
+        { address: 1, activeInputs: [1] },
+        { address: 3, activeInputs: [1, 3, 7, 8] }
+      ]
+    });
+  });
+
+  it("should parse LAN_RMBUS_DATACHANGED with groupIndex = 1", () => {
+    // DataLen (2 bytes LE), header (0x80, 0x00), groupIndex (1), 10 bytes feedback status
+    // Example: module 11 input 1 active, module 13 inputs 1,3,7,8 active
+    const payload = Buffer.from([
+      0x0F, 0x00, // DataLen = 15 (correct per Z21 spec)
+      0x80, 0x00, // Header: opcode 0x80, 0x00
+      0x01,       // groupIndex = 1 (modules 11-20)
+      0x01,       // module 11: input 1 active (bit 0)
+      0x00,       // module 12: no input active
+      0xC5,       // module 13: 0b11000101 => inputs 1,3,7,8 active
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 // modules 14-20: no input active
+    ]);
+    const parser = new FeedbackParser();
+    const result = parser.parse(payload);
+    expect(result).toEqual({
+      type: "feedback",
+      value: [
+        { address: 11, activeInputs: [1] },
+        { address: 13, activeInputs: [1, 3, 7, 8] }
+      ]
+    });
+  });
+
 });
 

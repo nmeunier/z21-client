@@ -1,6 +1,6 @@
 {
   "name": "z21-client",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "TypeScript UDP client for Roco/Fleischmann Z21 DCC command station",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,14 +21,12 @@
     "fleischmann",
     "model-railway",
     "model-train",
-    "railroad",
     "train-control",
     "locomotive",
     "turnout",
     "accessory",
     "decoder",
     "cv",
-    "udp",
     "typescript",
     "nodejs"
   ],

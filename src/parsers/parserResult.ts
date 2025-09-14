@@ -104,6 +104,16 @@ export interface CvResultData {
     value: number;
 }
 
+export interface FeedbackModuleStatus {
+    address: number;
+    activeInputs: number[];
+}
+
+export interface FeedbackResult {
+    type: "feedback";
+    value: FeedbackModuleStatus[];
+}
+
 
 /**
  * Union type for all possible results
@@ -119,4 +129,5 @@ export type ParserResult =
     | UnknownBroadcastResult
     | AccessoryInfoResult
     | EngineInfoResult
-    | CvResult;
+    | CvResult
+    | FeedbackResult;

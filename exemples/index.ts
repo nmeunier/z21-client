@@ -46,6 +46,10 @@ async function main() {
     console.log("Programming mode response:", payload);
   });
 
+  z21.on("feedback", (payload) => {
+    console.log("Feedback response:", payload);
+  });
+
   z21.on("error", (err) => {
     console.error("Z21Client error:", err);
   });
@@ -103,6 +107,8 @@ async function main() {
     await z21.engines.setEngineFunctions(210, 0, 'off');
     console.log("Engine functions set for locomotive 210.");
     await delay(1000);
+
+    await delay(120000);
 
     await z21.system.setTrackPowerOff();
     console.log("Track power turned off.");
