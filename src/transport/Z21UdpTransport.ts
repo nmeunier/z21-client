@@ -29,7 +29,7 @@ export class Z21UdpTransport extends EventEmitter {
     });
 
     if (this.debug) {
-      console.log(`[Z21UdpTransport] Init`);
+      console.log("[Z21UdpTransport] Init");
     }
   }
 

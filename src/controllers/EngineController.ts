@@ -58,7 +58,7 @@ export class EngineController {
     }
 
     // XpressNet frame: E4 = drive engine command
-    let xpressNetFrame = [0xE4, steps, addrH, addrL, speedByte];
+    const xpressNetFrame = [0xE4, steps, addrH, addrL, speedByte];
 
     // --- Calculate XOR checksum ---
     let xor = 0;
@@ -103,7 +103,7 @@ export class EngineController {
         functionByte = 0x80;
         break;
       default:
-        throw new Error('state must be "on", "off" or "toggle"');
+        throw new Error("state must be \"on\", \"off\" or \"toggle\"");
     }
 
     // Set the specific function bit
@@ -137,26 +137,46 @@ export class EngineController {
       // LAN_X header: [0x40, 0x00]
       const payload = [0x40, 0x00, ...xpressNetFrame];
 
-      this.transport.sendCommand(payload);
+      const timeoutMs = 30000; // 30 seconds
+      let timer: NodeJS.Timeout | null = setTimeout(() => {
+        cleanup();
+        reject(new Error("cvRead timeout"));
+      }, timeoutMs);
 
-      this.transport.on("cvResult", (msg) => {
+      const onCv = (msg: any) => {
         if (msg.cv === cv) {
+          cleanup();
           resolve(msg);
         }
-      });
+      };
 
-      this.transport.on("error", (msg) => {
+      const onError = (msg: any) => {
         if (msg.code === "nack" || msg.code === "nack-sc") {
+          cleanup();
           reject(msg);
         }
+      };
+
+      const cleanup = () => {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        this.transport.removeListener("cvResult", onCv);
+        this.transport.removeListener("error", onError);
+      };
+
+      this.transport.on("cvResult", onCv);
+      this.transport.on("error", onError);
+
+      this.transport.sendCommand(payload).catch((err) => {
+        cleanup();
+        reject(err);
       });
 
     });
 
-
-
   }
-
   /**
    * Write a CV in direct mode.
    * @param cv CV number (1-1024)
@@ -180,18 +200,41 @@ export class EngineController {
       // LAN_X header: [0x40, 0x00]
       const payload = [0x40, 0x00, ...xpressNetFrame];
 
-      this.transport.sendCommand(payload);
+      const timeoutMs = 30000; // 30 seconds
+      let timer: NodeJS.Timeout | null = setTimeout(() => {
+        cleanup();
+        reject(new Error("cvWrite timeout"));
+      }, timeoutMs);
 
-      this.transport.on("cvResult", (msg) => {
+      const onCv = (msg: any) => {
         if (msg.cv === cv) {
+          cleanup();
           resolve(msg);
         }
-      });
+      };
 
-      this.transport.on("error", (msg) => {
+      const onError = (msg: any) => {
         if (msg.code === "nack" || msg.code === "nack-sc") {
+          cleanup();
           reject(msg);
         }
+      };
+
+      const cleanup = () => {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        this.transport.removeListener("cvResult", onCv);
+        this.transport.removeListener("error", onError);
+      };
+
+      this.transport.on("cvResult", onCv);
+      this.transport.on("error", onError);
+
+      this.transport.sendCommand(payload).catch((err) => {
+        cleanup();
+        reject(err);
       });
     });
 

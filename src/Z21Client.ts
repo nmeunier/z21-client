@@ -45,7 +45,7 @@ export class Z21Client extends EventEmitter {
     this.transport.on("error", (err) => this.emit("error", err));
 
     if (debug) {
-      console.log(`[Z21Client] Init`);
+      console.log("[Z21Client] Init");
     }
 
   }

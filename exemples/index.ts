@@ -7,7 +7,7 @@ function delay(ms: number) {
 
 
 async function main() {
-  const z21 = new Z21Client("192.168.0.214", 21105, false);
+  const z21 = new Z21Client("192.168.0.215", 21105, false);
 
   // Event listeners
   z21.on("debug", (msg) => {
@@ -64,12 +64,12 @@ async function main() {
     await z21.system.getStatus();
     console.log("Status requested.");
 
-    await z21.system.getSerialNumber();
-    console.log("SerialNumber requested.");
-
     await z21.system.setTrackPowerOn();
     console.log("Track power turned on.");
     await delay(2000);
+
+    await z21.system.getSerialNumber();
+    console.log("SerialNumber requested.");
 
     await z21.accessories.switchTurnout(1, false);
     console.log("Turnout 1 switched to position 1.");
@@ -108,7 +108,7 @@ async function main() {
     console.log("Engine functions set for locomotive 210.");
     await delay(1000);
 
-    await delay(120000);
+    await delay(260000);
 
     await z21.system.setTrackPowerOff();
     console.log("Track power turned off.");

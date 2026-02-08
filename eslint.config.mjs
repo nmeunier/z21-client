@@ -5,18 +5,18 @@ import jestPlugin from "eslint-plugin-jest";
 
 export default [
   {
-    files: ["*.ts", "*.tsx"],
-    language: "typescript",
-    parser: tsParser,
-    plugins: {
-      "@typescript-eslint": tsPlugin,
-      jest: jestPlugin,
-    },
+    files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
+      parser: tsParser,
       parserOptions: {
         ecmaVersion: "latest",
         sourceType: "module",
+        project: "./tsconfig.json",
       },
+    },
+    plugins: {
+      "@typescript-eslint": tsPlugin,
+      jest: jestPlugin,
     },
     rules: {
       semi: ["error", "always"],
