@@ -1,5 +1,13 @@
 # z21-client
 
+[![npm version](https://img.shields.io/npm/v/z21-client)](https://www.npmjs.com/package/z21-client)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
+[![Tests](https://github.com/nmeunier/z21-client/workflows/Tests%20%26%20Build/badge.svg)](https://github.com/nmeunier/z21-client/actions)
+[![codecov](https://codecov.io/gh/nmeunier/z21-client/branch/main/graph/badge.svg)](https://codecov.io/gh/nmeunier/z21-client)
+[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-brightgreen.svg)](https://nodejs.org/)
+
+
 z21-client is a Node.js library written in TypeScript that implements the Roco/Fleischmann Z21 DCC command station.
 It provides a strongly-typed, event-driven API to control locomotives and accessories, read and write CVs, and monitor system events in real time.
 Connection to the Z21 command station is performed over the LAN (Ethernet/UDP).
