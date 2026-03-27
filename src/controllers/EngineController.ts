@@ -106,8 +106,11 @@ export class EngineController {
         throw new Error("state must be \"on\", \"off\" or \"toggle\"");
     }
 
-    // Set the specific function bit
-    functionByte |= (1 << (functionNumber - 1)); // Set the bit corresponding to the function number
+    // Set function number in bits 0-5 per Z21 LAN protocol specification
+    // See: Z21 LAN Protocol v1.13, Section 4.2 (LAN_X_SET_LOCO_FUNCTION)
+    // DB3 byte format: bits 7-6 = switch type (00=off, 01=on, 10=toggle), bits 5-0 = function index
+    // Reference: https://www.z21.eu/media/Kwc_Basic_DownloadTag_Component/root-en-main_47-702/default/69bad87e/1712141518/z21-lan-protokoll-en.pdf
+    functionByte |= (functionNumber & 0x3F);
 
     // Build the command payload
     // E4 = set function command, 0x40 = LAN_X header, 0x00 = XpressNet command
