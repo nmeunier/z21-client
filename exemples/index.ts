@@ -1,4 +1,4 @@
-// example/index.ts
+/* example/index.ts */
 import { Z21Client } from "../src/Z21Client";
 
 function delay(ms: number) {
@@ -7,6 +7,9 @@ function delay(ms: number) {
 
 
 async function main() {
+  const engineAddress = 3;
+  const accessoryAddress = 1;
+
   const z21 = new Z21Client("192.168.0.215", 21105, false);
 
   // Event listeners
@@ -71,44 +74,56 @@ async function main() {
     await z21.system.getSerialNumber();
     console.log("SerialNumber requested.");
 
-    await z21.accessories.switchTurnout(1, false);
-    console.log("Turnout 1 switched to position 1.");
-    await z21.accessories.switchTurnout(1, false, false);
+    await z21.accessories.switchTurnout(accessoryAddress, false);
+    console.log(`Turnout ${accessoryAddress} switched to position 1.`);
+    await z21.accessories.switchTurnout(accessoryAddress, false, false);
     await delay(3000);
 
-    await z21.engines.setEngineFunctions(210, 0, 'on');
-    console.log("Engine functions set for locomotive 210.");
+    await z21.engines.setEngineFunctions(engineAddress, 0, 'on');
+    console.log(`Engine functions set for locomotive ${engineAddress}.`);
+
+    await z21.engines.setEngineFunctions(engineAddress, 1, 'on');
+    console.log(`Engine functions set for locomotive ${engineAddress}.`);
 
     await delay(500);
-    await z21.engines.getEngineInfo(210);
-    console.log("Request Info locomotive 210.");
+    await z21.engines.setEngineFunctions(engineAddress, 8, 'on');
+    console.log(`Engine functions set for locomotive ${engineAddress}.`);
+    await delay(500);
+    await z21.engines.setEngineFunctions(engineAddress, 8, 'off');
+    console.log(`Engine functions set for locomotive ${engineAddress}.`);
 
-    await z21.engines.setDriveEngine(210, 50, true);
-    console.log("Driving locomotive 210 at speed 50 forward.");
-    await delay(2000);
-
-    await z21.engines.setDriveEngine(210, 0, true);
-    console.log("Driving locomotive 210 at speed 0 forward.");
-    await delay(5000);
-
-    await z21.engines.setDriveEngine(210, 50, false);
-    console.log("Driving locomotive 210 at speed 50 reverse.");
-    await delay(2000);
-
-    await z21.engines.setDriveEngine(210, 1, false);
-    console.log("Driving locomotive 210 at e-stop.");
-    await delay(2000);
-
-    await z21.accessories.switchTurnout(1, true);
-    await z21.accessories.switchTurnout(1, true, false);
-    console.log("Turnout 1 switched to position 1.");
+    await delay(500);
+    await z21.engines.getEngineInfo(engineAddress);
+    console.log(`Request Info locomotive ${engineAddress}.`);
+    /*
+        await z21.engines.setDriveEngine(engineAddress, 50, true);
+        console.log(`Driving locomotive ${engineAddress} at speed 50 forward.`);
+        await delay(2000);
+    
+        await z21.engines.setDriveEngine(engineAddress, 0, true);
+        console.log(`Driving locomotive ${engineAddress} at speed 0 forward.`);
+        await delay(5000);
+    
+        await z21.engines.setDriveEngine(engineAddress, 50, false);
+        console.log(`Driving locomotive ${engineAddress} at speed 50 reverse.`);
+        await delay(2000);
+    
+        await z21.engines.setDriveEngine(engineAddress, 1, false);
+        console.log(`Driving locomotive ${engineAddress} at e-stop.`);
+        await delay(2000);
+    */
+    await z21.accessories.switchTurnout(accessoryAddress, true);
+    await z21.accessories.switchTurnout(accessoryAddress, true, false);
+    console.log(`Turnout ${accessoryAddress} switched to position 1.`);
     await delay(1000);
 
-    await z21.engines.setEngineFunctions(210, 0, 'off');
-    console.log("Engine functions set for locomotive 210.");
+    await z21.engines.setEngineFunctions(engineAddress, 1, 'off');
+    console.log(`Engine functions set for locomotive ${engineAddress}.`);
     await delay(1000);
 
-    await delay(260000);
+    await z21.engines.setEngineFunctions(engineAddress, 0, 'off');
+    console.log(`Engine functions set for locomotive ${engineAddress}.`);
+    await delay(1000);
 
     await z21.system.setTrackPowerOff();
     console.log("Track power turned off.");
