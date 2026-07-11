@@ -183,4 +183,27 @@ describe("Z21Client - Indexed CV access", () => {
   it("should reject cvReadIndexed when cv is outside the 257-512 indexed window", async () => {
     await expect(client.engines.cvReadIndexed(0, 0, 256)).rejects.toThrow("cv must be between 257 and 512 for indexed CV access");
   });
+
+  it("should resolve cvWriteIndexed with the target CV value after writing CV31 and CV32", async () => {
+    const messageHandler = mockSocket.on.mock.calls.find((call: any[]) => call[0] === "message")[1];
+
+    const promise = client.engines.cvWriteIndexed(0, 255, 261, 42);
+
+    mockParser.parse.mockReturnValueOnce({ type: "cvResult", value: { cv: 31, value: 0 } });
+    messageHandler(dummyBuffer);
+    await flush();
+
+    mockParser.parse.mockReturnValueOnce({ type: "cvResult", value: { cv: 32, value: 255 } });
+    messageHandler(dummyBuffer);
+    await flush();
+
+    mockParser.parse.mockReturnValueOnce({ type: "cvResult", value: { cv: 261, value: 42 } });
+    messageHandler(dummyBuffer);
+
+    await expect(promise).resolves.toEqual({ cv: 261, value: 42 });
+  });
+
+  it("should reject cvWriteIndexed when cv is outside the 257-512 indexed window", async () => {
+    await expect(client.engines.cvWriteIndexed(0, 0, 513, 1)).rejects.toThrow("cv must be between 257 and 512 for indexed CV access");
+  });
 });

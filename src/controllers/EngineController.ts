@@ -274,4 +274,19 @@ export class EngineController {
     return this.cvRead(cv) as Promise<CvResultData>;
   }
 
+  /**
+   * Write a CV using indexed access (NMRA S-9.2.2 Appendix B, CV31/CV32 page registers).
+   * Writes the index registers (CV31, CV32) then writes the target CV in the 257-512 window.
+   * @param indexHigh Index high byte, written to CV31 (0-255)
+   * @param indexLow Index low byte, written to CV32 (0-255)
+   * @param cv Target CV number within the indexed window (257-512)
+   * @param value Value to write (0-255)
+   */
+  public async cvWriteIndexed(indexHigh: number, indexLow: number, cv: number, value: number): Promise<CvResultData> {
+    this.validateIndexedCvParams(indexHigh, indexLow, cv);
+    await this.cvWrite(31, indexHigh);
+    await this.cvWrite(32, indexLow);
+    return this.cvWrite(cv, value) as Promise<CvResultData>;
+  }
+
 }
