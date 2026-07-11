@@ -245,4 +245,33 @@ export class EngineController {
 
   }
 
+  /**
+   * Validate parameters shared by cvReadIndexed/cvWriteIndexed.
+   */
+  private validateIndexedCvParams(indexHigh: number, indexLow: number, cv: number): void {
+    if (indexHigh < 0 || indexHigh > 255) {
+      throw new Error("indexHigh must be between 0 and 255");
+    }
+    if (indexLow < 0 || indexLow > 255) {
+      throw new Error("indexLow must be between 0 and 255");
+    }
+    if (cv < 257 || cv > 512) {
+      throw new Error("cv must be between 257 and 512 for indexed CV access");
+    }
+  }
+
+  /**
+   * Read a CV using indexed access (NMRA S-9.2.2 Appendix B, CV31/CV32 page registers).
+   * Writes the index registers (CV31, CV32) then reads the target CV in the 257-512 window.
+   * @param indexHigh Index high byte, written to CV31 (0-255)
+   * @param indexLow Index low byte, written to CV32 (0-255)
+   * @param cv Target CV number within the indexed window (257-512)
+   */
+  public async cvReadIndexed(indexHigh: number, indexLow: number, cv: number): Promise<CvResultData> {
+    this.validateIndexedCvParams(indexHigh, indexLow, cv);
+    await this.cvWrite(31, indexHigh);
+    await this.cvWrite(32, indexLow);
+    return this.cvRead(cv) as Promise<CvResultData>;
+  }
+
 }

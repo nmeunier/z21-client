@@ -107,3 +107,80 @@ describe("Z21Client", () => {
     await expect(promise).rejects.toEqual({ code: "nack", message: "CV Read/Write NACK" });
   });
 });
+
+describe("Z21Client - Indexed CV access", () => {
+  let client: Z21Client;
+  let mockSocket: any;
+  let mockParser: any;
+
+  beforeEach(() => {
+    mockSocket = {
+      send: jest.fn((buffer, port, host, cb) => cb && cb(null)),
+      on: jest.fn(),
+      close: jest.fn(),
+    };
+    (dgram.createSocket as jest.Mock).mockReturnValue(mockSocket);
+
+    mockParser = {
+      parse: jest.fn(),
+    };
+    jest.spyOn(require("../src/parsers/feedbackParser"), "FeedbackParser").mockImplementation(() => mockParser);
+
+    client = new Z21Client("192.168.0.100", 21105);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
+  });
+
+  // Content doesn't matter: mockParser.parse is fully mocked below, so any buffer works
+  // as the trigger for the UDP "message" handler.
+  const dummyBuffer = Buffer.from([0x0a, 0x00, 0x40, 0x00, 0x64, 0x14, 0x00, 0x00, 0x00, 0x00]);
+  const flush = () => new Promise((resolve) => setImmediate(resolve));
+
+  it("should resolve cvReadIndexed with the target CV value after writing CV31 and CV32", async () => {
+    const messageHandler = mockSocket.on.mock.calls.find((call: any[]) => call[0] === "message")[1];
+
+    const promise = client.engines.cvReadIndexed(0, 255, 261);
+
+    mockParser.parse.mockReturnValueOnce({ type: "cvResult", value: { cv: 31, value: 0 } });
+    messageHandler(dummyBuffer);
+    await flush();
+
+    mockParser.parse.mockReturnValueOnce({ type: "cvResult", value: { cv: 32, value: 255 } });
+    messageHandler(dummyBuffer);
+    await flush();
+
+    mockParser.parse.mockReturnValueOnce({ type: "cvResult", value: { cv: 261, value: 42 } });
+    messageHandler(dummyBuffer);
+
+    await expect(promise).resolves.toEqual({ cv: 261, value: 42 });
+  });
+
+  it("should reject cvReadIndexed immediately when the CV31 write NACKs, without writing CV32", async () => {
+    client.on("error", () => { });
+    const messageHandler = mockSocket.on.mock.calls.find((call: any[]) => call[0] === "message")[1];
+
+    const promise = client.engines.cvReadIndexed(0, 255, 261);
+
+    mockParser.parse.mockReturnValueOnce({ type: "error", value: { code: "nack", message: "CV Read/Write NACK" } });
+    messageHandler(dummyBuffer);
+
+    await expect(promise).rejects.toEqual({ code: "nack", message: "CV Read/Write NACK" });
+    // Only the CV31 write was ever sent — CV32 and the target CV read were never attempted
+    expect(mockSocket.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("should reject cvReadIndexed when indexHigh is out of range", async () => {
+    await expect(client.engines.cvReadIndexed(256, 0, 261)).rejects.toThrow("indexHigh must be between 0 and 255");
+  });
+
+  it("should reject cvReadIndexed when indexLow is out of range", async () => {
+    await expect(client.engines.cvReadIndexed(0, -1, 261)).rejects.toThrow("indexLow must be between 0 and 255");
+  });
+
+  it("should reject cvReadIndexed when cv is outside the 257-512 indexed window", async () => {
+    await expect(client.engines.cvReadIndexed(0, 0, 256)).rejects.toThrow("cv must be between 257 and 512 for indexed CV access");
+  });
+});
