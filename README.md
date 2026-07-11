@@ -46,14 +46,25 @@ z21.on("status", (status) => {
   console.log("Z21 status:", status);
 });
 
+// Required: Z21Client forwards protocol errors (e.g. CV NACKs) as "error" events.
+// Without a listener here, an unhandled "error" event crashes the Node process.
+z21.on("error", (err) => {
+  console.error("Z21Client error:", err);
+});
+
 (async () => {
-  await z21.system.setTrackPowerOn();
-  await z21.system.getStatus();
-  z21.engines.setDriveEngine(3, 50, true); // address, speed, forward
-  await z21.engines.setEngineFunctions(3, 1, "on");
-  await z21.engines.cvWrite(17, 192);
-  const cvResult = await z21.engines.cvRead(17);
-  await z21.accessories.switchTurnout(5, true); // address 5, output 2 (true), activate (default)
+  try {
+    await z21.system.setTrackPowerOn();
+    await z21.system.getStatus();
+    z21.engines.setDriveEngine(3, 50, true); // address, speed, forward
+    await z21.engines.setEngineFunctions(3, 1, "on");
+    await z21.engines.cvWrite(17, 192);
+    const cvResult = await z21.engines.cvRead(17);
+    const productId = await z21.engines.cvReadIndexed(0, 255, 261); // ESU indexed CV (Product ID byte 1)
+    await z21.accessories.switchTurnout(5, true); // address 5, output 2 (true), activate (default)
+  } catch (err) {
+    console.error("Command failed:", err);
+  }
 })();
 ```
 
@@ -92,6 +103,8 @@ new Z21Client(host: string, port?: number, debug?: boolean)
 - `engines.setEngineFunctions(address: number, functionNumber: number, state: "on" | "off" | "toggle")`: Set a function state on an engine (F1-F28)
 - `engines.cvRead(cv: number)`: Read a CV in direct mode
 - `engines.cvWrite(cv: number, value: number)`: Write a CV in direct mode
+- `engines.cvReadIndexed(indexHigh: number, indexLow: number, cv: number)`: Read a CV using NMRA indexed access (CV31/CV32 page registers, target `cv` in range 257-512). Used by decoders (e.g. ESU LokSound) to expose configuration beyond the direct-mode range — for example, reading CV261-264 with `indexHigh=0, indexLow=255` returns the decoder's ESU Product ID
+- `engines.cvWriteIndexed(indexHigh: number, indexLow: number, cv: number, value: number)`: Write a CV using NMRA indexed access (CV31/CV32 page registers, target `cv` in range 257-512)
 
 ---
 

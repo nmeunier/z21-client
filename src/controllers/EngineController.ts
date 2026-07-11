@@ -1,11 +1,31 @@
-import { CvResultData, ErrorResultData } from "../parsers/parserResult";
+import { CvResultData } from "../parsers/parserResult";
 import { Z21UdpTransport } from "../transport/Z21UdpTransport";
 
 export class EngineController {
   private transport: Z21UdpTransport;
 
+  // Serializes all CV read/write operations (including each internal step of
+  // cvReadIndexed/cvWriteIndexed) so only one is ever in flight at a time.
+  // Responses are correlated purely by CV number on a shared transport
+  // EventEmitter with no per-request id, so two concurrent operations could
+  // otherwise resolve each other's listeners with the wrong data.
+  private cvQueue: Promise<void> = Promise.resolve();
+
   constructor(transport: Z21UdpTransport) {
     this.transport = transport;
+  }
+
+  /**
+   * Run a CV operation once every previously queued CV operation has settled,
+   * so at most one is ever in flight at a time.
+   */
+  private enqueueCv<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.cvQueue.then(operation, operation);
+    this.cvQueue = result.then(
+      () => undefined,
+      () => undefined
+    );
+    return result;
   }
 
   /**
@@ -123,7 +143,11 @@ export class EngineController {
    * Read a CV in direct mode.
    * @param cv CV number (1-1024)
    */
-  public async cvRead(cv: number): Promise<ErrorResultData | CvResultData> {
+  public async cvRead(cv: number): Promise<CvResultData> {
+    return this.enqueueCv(() => this.rawCvRead(cv));
+  }
+
+  private rawCvRead(cv: number): Promise<CvResultData> {
     return new Promise((resolve, reject) => {
 
       const cvAddr = cv - 1;
@@ -185,7 +209,11 @@ export class EngineController {
    * @param cv CV number (1-1024)
    * @param value Value to write (0-255)
    */
-  public async cvWrite(cv: number, value: number): Promise<ErrorResultData | CvResultData> {
+  public async cvWrite(cv: number, value: number): Promise<CvResultData> {
+    return this.enqueueCv(() => this.rawCvWrite(cv, value));
+  }
+
+  private rawCvWrite(cv: number, value: number): Promise<CvResultData> {
     return new Promise((resolve, reject) => {
       // CVs are 1-based in docs, but 0-based in protocol
       const cvAddr = cv - 1;
@@ -243,6 +271,79 @@ export class EngineController {
 
 
 
+  }
+
+  /**
+   * Validate parameters shared by cvReadIndexed/cvWriteIndexed.
+   * @param value Only validated when provided (cvWriteIndexed passes it, cvReadIndexed doesn't).
+   */
+  private validateIndexedCvParams(indexHigh: number, indexLow: number, cv: number, value?: number): void {
+    if (!Number.isInteger(indexHigh) || indexHigh < 0 || indexHigh > 255) {
+      throw new Error("indexHigh must be an integer between 0 and 255");
+    }
+    if (!Number.isInteger(indexLow) || indexLow < 0 || indexLow > 255) {
+      throw new Error("indexLow must be an integer between 0 and 255");
+    }
+    if (!Number.isInteger(cv) || cv < 257 || cv > 512) {
+      throw new Error("cv must be an integer between 257 and 512 for indexed CV access");
+    }
+    if (value !== undefined && (!Number.isInteger(value) || value < 0 || value > 255)) {
+      throw new Error("value must be an integer between 0 and 255");
+    }
+  }
+
+  /**
+   * Write the CV31/CV32 index registers to select an indexed CV page.
+   */
+  private async selectIndexPage(indexHigh: number, indexLow: number): Promise<void> {
+    await this.rawCvWrite(31, indexHigh);
+    await this.rawCvWrite(32, indexLow);
+  }
+
+  /**
+   * Read a CV using indexed access (NMRA S-9.2.2, CV31/CV32 page registers).
+   * Writes the index registers (CV31, CV32) then reads the target CV in the 257-512 window.
+   *
+   * The whole 3-step sequence (write CV31, write CV32, read target CV) runs as a single
+   * queued unit, so no other CV operation on this controller can interleave with it and
+   * change the page selection midway through.
+   *
+   * If the CV31 write succeeds but CV32 or the target read then fails, the decoder's index
+   * registers are left with the new CV31 but a stale CV32 - there is no rollback. This is an
+   * inherent limitation of the non-transactional NMRA CV31/32 mechanism, not specific to this
+   * library; re-run cvReadIndexed/cvWriteIndexed with known-good values to recover.
+   *
+   * Because this performs 3 sequential round trips, each with its own 30s timeout, the total
+   * call can take up to ~90s in the worst case (vs. ~30s for a plain cvRead/cvWrite).
+   * @param indexHigh Index high byte, written to CV31 (0-255)
+   * @param indexLow Index low byte, written to CV32 (0-255)
+   * @param cv Target CV number within the indexed window (257-512)
+   */
+  public async cvReadIndexed(indexHigh: number, indexLow: number, cv: number): Promise<CvResultData> {
+    this.validateIndexedCvParams(indexHigh, indexLow, cv);
+    return this.enqueueCv(async () => {
+      await this.selectIndexPage(indexHigh, indexLow);
+      return this.rawCvRead(cv);
+    });
+  }
+
+  /**
+   * Write a CV using indexed access (NMRA S-9.2.2, CV31/CV32 page registers).
+   * Writes the index registers (CV31, CV32) then writes the target CV in the 257-512 window.
+   *
+   * See {@link cvReadIndexed} for the atomicity, partial-failure, and timeout caveats that
+   * apply equally here.
+   * @param indexHigh Index high byte, written to CV31 (0-255)
+   * @param indexLow Index low byte, written to CV32 (0-255)
+   * @param cv Target CV number within the indexed window (257-512)
+   * @param value Value to write (0-255)
+   */
+  public async cvWriteIndexed(indexHigh: number, indexLow: number, cv: number, value: number): Promise<CvResultData> {
+    this.validateIndexedCvParams(indexHigh, indexLow, cv, value);
+    return this.enqueueCv(async () => {
+      await this.selectIndexPage(indexHigh, indexLow);
+      return this.rawCvWrite(cv, value);
+    });
   }
 
 }
