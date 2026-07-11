@@ -261,7 +261,7 @@ export class EngineController {
   }
 
   /**
-   * Read a CV using indexed access (NMRA S-9.2.2 Appendix B, CV31/CV32 page registers).
+   * Read a CV using indexed access (NMRA S-9.2.2, CV31/CV32 page registers).
    * Writes the index registers (CV31, CV32) then reads the target CV in the 257-512 window.
    * @param indexHigh Index high byte, written to CV31 (0-255)
    * @param indexLow Index low byte, written to CV32 (0-255)
@@ -275,7 +275,7 @@ export class EngineController {
   }
 
   /**
-   * Write a CV using indexed access (NMRA S-9.2.2 Appendix B, CV31/CV32 page registers).
+   * Write a CV using indexed access (NMRA S-9.2.2, CV31/CV32 page registers).
    * Writes the index registers (CV31, CV32) then writes the target CV in the 257-512 window.
    * @param indexHigh Index high byte, written to CV31 (0-255)
    * @param indexLow Index low byte, written to CV32 (0-255)
