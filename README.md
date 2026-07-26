@@ -128,6 +128,7 @@ new Z21Client(host: string, port?: number, debug?: boolean)
 - `"trackPower"`: Track power state
 - `"programmingMode"`: Programming mode state
 - `"shortCircuit"`: Short circuit detected
+- `"stopped"`: Global emergency stop broadcast (track power stays on)
 - `"engineInfo"`: Engine info updates
 - `"cvResult"`: CV read/write result
 - `"accessoryInfo"`: Accessory/turnout info
