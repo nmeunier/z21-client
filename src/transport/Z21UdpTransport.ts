@@ -45,7 +45,7 @@ export class Z21UdpTransport extends EventEmitter {
 
     const parsed = this.feedbackParser.parse(msg);
     if (parsed) {
-      this.emit(parsed.type, parsed.value);
+      this.emit(parsed.type, "value" in parsed ? parsed.value : undefined);
     }
 
   }

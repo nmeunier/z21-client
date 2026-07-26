@@ -36,6 +36,7 @@ export class Z21Client extends EventEmitter {
     this.transport.on("trackPower", (msg) => this.emit("trackPower", msg));
     this.transport.on("programmingMode", (msg) => this.emit("programmingMode", msg));
     this.transport.on("shortCircuit", (msg) => this.emit("shortCircuit", msg));
+    this.transport.on("stopped", (msg) => this.emit("stopped", msg));
     this.transport.on("engineInfo", (msg) => this.emit("engineInfo", msg));
     this.transport.on("cvResult", (msg) => this.emit("cvResult", msg));
     this.transport.on("accessoryInfo", (msg) => this.emit("accessoryInfo", msg));

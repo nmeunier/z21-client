@@ -62,6 +62,10 @@ export interface ShortCircuitResult {
     value: "detected"
 }
 
+export interface StoppedResult {
+    type: "stopped";
+}
+
 
 export interface UnknownBroadcastResult {
     type: "unknownBroadcast";
@@ -126,6 +130,7 @@ export type ParserResult =
     | TrackPowerResult
     | ProgrammingModeResult
     | ShortCircuitResult
+    | StoppedResult
     | UnknownBroadcastResult
     | AccessoryInfoResult
     | EngineInfoResult

@@ -55,6 +55,9 @@ export class LanXParser {
             return { type: "unknownBroadcast", value: payload[1] };
         }
 
+      case 0x81: // LAN_X_BC_STOPPED — global emergency stop, track power unchanged
+        return { type: "stopped" };
+
       case 0x64: // LAN_X_CV_RESULT
         if (payload[1] === 0x14) {
           return this.parseCV(payload);
