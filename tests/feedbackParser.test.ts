@@ -145,6 +145,18 @@ describe("FeedbackParser", () => {
     });
   });
 
+  it("should parse LAN_X_BC_STOPPED broadcast", () => {
+    // Global emergency stop broadcast (issue #6): track power stays on, distinct
+    // from the trackPower "off" event, so it must surface as its own "stopped" type.
+    const payload = Buffer.from([
+      0x06, 0x00, // DataLen = 6
+      0x40, 0x00, // LAN_X header
+      0x81, 0x81  // X-Header (LAN_X_BC_STOPPED), XOR
+    ]);
+    const result = parser.parse(payload);
+    expect(result).toEqual({ type: "stopped" });
+  });
+
   it("should parse LAN_X_CV_NACK_SC", () => {
     // Simulate a NACK error due to short-circuit
     const payload = Buffer.from([

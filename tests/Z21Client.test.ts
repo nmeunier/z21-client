@@ -63,6 +63,20 @@ describe("Z21Client", () => {
     expect(serialHandler).toHaveBeenCalledWith(12345);
   });
 
+  it("should emit stopped event when receiving LAN_X_BC_STOPPED broadcast", () => {
+    const stoppedHandler = jest.fn();
+    client.on("stopped", stoppedHandler);
+
+    // Simulate parser return
+    mockParser.parse.mockReturnValue({ type: "stopped" });
+
+    // Simulate receiving a UDP message
+    const messageHandler = mockSocket.on.mock.calls.find((call: any[]) => call[0] === "message")[1];
+    messageHandler(Buffer.from([0x06, 0x00, 0x40, 0x00, 0x81, 0x81]));
+
+    expect(stoppedHandler).toHaveBeenCalled();
+  });
+
   it("should close the UDP socket", async () => {
     await client.close();
     expect(mockSocket.close).toHaveBeenCalled();
@@ -121,7 +135,9 @@ describe("Z21Client", () => {
     await client.system.emergencyStop();
     expect(mockSocket.send).toHaveBeenCalledTimes(1);
     const sentBuffer: Buffer = mockSocket.send.mock.calls[0][0];
-    expect(Array.from(sentBuffer.subarray(2, 4))).toEqual([0x80, 0x80]);
+    // Must include the LAN_X header [0x40, 0x00] like every other XpressNet command,
+    // otherwise the Z21 silently ignores the malformed packet (issue #5).
+    expect(Array.from(sentBuffer.subarray(2, 6))).toEqual([0x40, 0x00, 0x80, 0x80]);
   });
 
   it("should send a UDP packet for setBroadcastFlags", async () => {
