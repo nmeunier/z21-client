@@ -84,6 +84,41 @@ describe("Z21Client", () => {
     expect(mockSocket.send).not.toHaveBeenCalled();
   });
 
+  it("should reject setExtAccessory address below 1", async () => {
+    await expect(client.accessories.setExtAccessory(0, 5)).rejects.toThrow(
+      "address must be an integer between 1 and 2043"
+    );
+    expect(mockSocket.send).not.toHaveBeenCalled();
+  });
+
+  it("should reject setExtAccessory address that is not an integer", async () => {
+    await expect(client.accessories.setExtAccessory(1.5, 5)).rejects.toThrow(
+      "address must be an integer between 1 and 2043"
+    );
+    expect(mockSocket.send).not.toHaveBeenCalled();
+  });
+
+  it("should reject setExtAccessory aspect below 0", async () => {
+    await expect(client.accessories.setExtAccessory(1, -1)).rejects.toThrow(
+      "aspect must be an integer between 0 and 255"
+    );
+    expect(mockSocket.send).not.toHaveBeenCalled();
+  });
+
+  it("should reject setExtAccessory aspect above 255", async () => {
+    await expect(client.accessories.setExtAccessory(1, 256)).rejects.toThrow(
+      "aspect must be an integer between 0 and 255"
+    );
+    expect(mockSocket.send).not.toHaveBeenCalled();
+  });
+
+  it("should reject setExtAccessory aspect that is not an integer", async () => {
+    await expect(client.accessories.setExtAccessory(1, 5.5)).rejects.toThrow(
+      "aspect must be an integer between 0 and 255"
+    );
+    expect(mockSocket.send).not.toHaveBeenCalled();
+  });
+
   it("should emit extAccessoryInfo event when receiving LAN_X_EXT_ACCESSORY_INFO broadcast", () => {
     const extAccessoryHandler = jest.fn();
     client.on("extAccessoryInfo", extAccessoryHandler);
