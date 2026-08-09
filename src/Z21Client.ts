@@ -40,6 +40,7 @@ export class Z21Client extends EventEmitter {
     this.transport.on("engineInfo", (msg) => this.emit("engineInfo", msg));
     this.transport.on("cvResult", (msg) => this.emit("cvResult", msg));
     this.transport.on("accessoryInfo", (msg) => this.emit("accessoryInfo", msg));
+    this.transport.on("extAccessoryInfo", (msg) => this.emit("extAccessoryInfo", msg));
     this.transport.on("unknownBroadcast", (err) => this.emit("unknownBroadcast", err));
     this.transport.on("feedback", (msg) => this.emit("feedback", msg));
 

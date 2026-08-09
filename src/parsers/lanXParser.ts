@@ -66,6 +66,9 @@ export class LanXParser {
       case 0x43: // LAN_X_TURNOUT_INFO
         return this.parseTurnoutInfo(payload.subarray(1));
 
+      case 0x44: // LAN_X_EXT_ACCESSORY_INFO
+        return this.parseExtAccessoryInfo(payload.subarray(1));
+
       case 0xEF: // LAN_X_ENGINE_INFO
         return this.parseEngineInfo(payload.subarray(1));
 
@@ -99,6 +102,21 @@ export class LanXParser {
     }
 
     return { type: "accessoryInfo", value: { address: turnoutAddress, position } };
+  }
+
+  private parseExtAccessoryInfo(payload: Buffer): ParserResult {
+    const adrMsb = payload[0];
+    const adrLsb = payload[1];
+    const rawAddress = (adrMsb << 8) + adrLsb;
+    const address = rawAddress - 3; // RawAddress 4 = user-facing address 1 (RCN-213)
+
+    const aspect = payload[2];
+    const status = payload[3];
+
+    return {
+      type: "extAccessoryInfo",
+      value: { address, aspect, valid: status === 0x00 }
+    };
   }
 
   private parseEngineInfo(payload: Buffer): ParserResult {
