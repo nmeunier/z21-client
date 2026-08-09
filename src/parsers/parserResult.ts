@@ -83,6 +83,17 @@ export interface AccessoryInfoResultData {
     position: "not_switched" | "P0" | "P1" | "invalid";
 }
 
+export interface ExtAccessoryInfoResult {
+    type: "extAccessoryInfo";
+    value: ExtAccessoryInfoResultData;
+}
+
+export interface ExtAccessoryInfoResultData {
+    address: number;
+    aspect: number;
+    valid: boolean;
+}
+
 export interface EngineInfoResult {
     type: "engineInfo";
     value: EngineInfoResultData;
@@ -133,6 +144,7 @@ export type ParserResult =
     | StoppedResult
     | UnknownBroadcastResult
     | AccessoryInfoResult
+    | ExtAccessoryInfoResult
     | EngineInfoResult
     | CvResult
     | FeedbackResult;

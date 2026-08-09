@@ -110,7 +110,9 @@ new Z21Client(host: string, port?: number, debug?: boolean)
 
 ### Accessory Controller
 
-- `accessories.switchTurnout(address: number, output?: boolean, activate?: boolean, queue?: boolean)`: Switch turnout/accessory
+- `accessories.setBasicAccessory(address: number, output?: boolean, activate?: boolean, queue?: boolean)`: Switch a basic accessory decoder (turnout, decoupler, light, ...) using `LAN_X_SET_TURNOUT`
+- `accessories.switchTurnout(address: number, output?: boolean, activate?: boolean, queue?: boolean)`: Deprecated alias for `setBasicAccessory`, kept for backward compatibility
+- `accessories.setExtAccessory(address: number, aspect: number)`: Send an aspect (0-255) to an extended accessory decoder (e.g. a multi-aspect signal) using `LAN_X_SET_EXT_ACCESSORY`. `address` is the user-facing address (1 = first extended accessory decoder), converted internally to the RCN-213 RawAddress (`address + 3`)
 
 ---
 
@@ -131,7 +133,8 @@ new Z21Client(host: string, port?: number, debug?: boolean)
 - `"stopped"`: Global emergency stop broadcast (track power stays on)
 - `"engineInfo"`: Engine info updates
 - `"cvResult"`: CV read/write result
-- `"accessoryInfo"`: Accessory/turnout info
+- `"accessoryInfo"`: Basic accessory/turnout info
+- `"extAccessoryInfo"`: Extended accessory (signal) aspect info
 - `"feedback"`: Feedback module updates ()
 - `"unknownBroadcast"`: Unknown broadcast received
 - `"error"`: UDP or protocol errors

@@ -423,6 +423,41 @@ describe("FeedbackParser", () => {
     });
   });
 
+  it("should parse LAN_X_EXT_ACCESSORY_INFO broadcast (valid data)", () => {
+    // Z21 LAN Protocol v1.13 §5.6: address 1 (RawAddress 4, per RCN-213), aspect 5, status 0x00 (valid)
+    const payload = Buffer.from([
+      0x0A, 0x00, // DataLen = 10
+      0x40, 0x00, // LAN_X header
+      0x44,       // LAN_X_EXT_ACCESSORY_INFO
+      0x00, 0x04, // Adr_MSB, Adr_LSB (RawAddress 4 = address 1)
+      0x05,       // DDDDDDDD (aspect)
+      0x00,       // Status: Data Valid
+      0x45        // XOR
+    ]);
+    const result = parser.parse(payload);
+    expect(result).toEqual({
+      type: "extAccessoryInfo",
+      value: { address: 1, aspect: 5, valid: true }
+    });
+  });
+
+  it("should parse LAN_X_EXT_ACCESSORY_INFO broadcast with unknown data", () => {
+    const payload = Buffer.from([
+      0x0A, 0x00,
+      0x40, 0x00,
+      0x44,
+      0x00, 0x04,
+      0x05,
+      0xFF,       // Status: Data Unknown
+      0xBA        // XOR
+    ]);
+    const result = parser.parse(payload);
+    expect(result).toEqual({
+      type: "extAccessoryInfo",
+      value: { address: 1, aspect: 5, valid: false }
+    });
+  });
+
   it("should parse LAN_RMBUS_DATACHANGED with groupIndex = 0", () => {
     // DataLen (2 bytes LE), header (0x80, 0x00), groupIndex (0), 10 bytes feedback status
     const payload = Buffer.from([
