@@ -163,10 +163,11 @@ new Z21Client(host: string, port?: number, debug?: boolean)
 
 | 1.x | 2.0 |
 | --- | --- |
-| `z21.on("feedback", mods => …)` — `mods: {address, activeInputs}[]` | `z21.on("occupancy", ({ bus, channels }) => …)` — `channels: {address, channel, occupied, nid?}[]` (free channels are now included) |
-| `setBroadcastFlags(engine, accessory, feedback)` | `setBroadcastFlags({ driving?, rbus?, railcom?, systemState?, loconetDetector?, canDetector? })`; `(true,true,true)` → `setBroadcastFlags()` |
-| `getBroadcastFlags()` result `{ raw, engine, accessory, feedback }` | `{ raw, driving, rbus, railcom, systemState, loconetDetector, canDetector }` |
+| `z21.on("feedback", mods => …)` — `mods: {address, activeInputs}[]` | `z21.on("occupancy", ({ bus, channels }) => …)` — `channels: {address, channel, occupied, nid?}[]` (free channels are now included; R-BUS is an 80-channel snapshot, LocoNet/CAN one channel per message) |
+| `setBroadcastFlags(engine, accessory, feedback)` | `setBroadcastFlags({ driving?, rbus?, railcom?, systemState?, loconetDetector?, canDetector? })`. Rename the booleans: `engine`→`driving`, `accessory`→`rbus`, `feedback`→`railcom`. `(true,true,true)` → `setBroadcastFlags()` |
+| `getBroadcastFlags()` result / `broadcastFlags` event value `{ raw, engine, accessory, feedback }` | `{ raw, driving, rbus, railcom, systemState, loconetDetector, canDetector }` |
 | types `FeedbackModuleStatus`, `FeedbackResult` | `OccupancyResult` / `OccupancyChannel`, `TransponderResult` / `TransponderChannel` |
+| malformed datagrams silently ignored | now emit an `error` event — attach an `"error"` listener or Node throws |
 
 ---
 
