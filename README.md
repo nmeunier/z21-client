@@ -52,6 +52,10 @@ z21.on("error", (err) => {
   console.error("Z21Client error:", err);
 });
 
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 (async () => {
   try {
     await z21.system.setTrackPowerOn();
@@ -61,7 +65,12 @@ z21.on("error", (err) => {
     await z21.engines.cvWrite(17, 192);
     const cvResult = await z21.engines.cvRead(17);
     const productId = await z21.engines.cvReadIndexed(0, 255, 261); // ESU indexed CV (Product ID byte 1)
-    await z21.accessories.switchTurnout(5, true); // address 5, output 2 (true), activate (default)
+
+    // Activate then Deactivate: most turnout decoders are solenoid-driven and
+    // will overheat if left powered - see the Accessory Controller note below.
+    await z21.accessories.setBasicAccessory(5, true); // address 5, output 2 (true), activate
+    await delay(150);
+    await z21.accessories.setBasicAccessory(5, true, false); // same address/output, deactivate
   } catch (err) {
     console.error("Command failed:", err);
   }
@@ -113,6 +122,9 @@ new Z21Client(host: string, port?: number, debug?: boolean)
 - `accessories.setBasicAccessory(address: number, output?: boolean, activate?: boolean, queue?: boolean)`: Switch a basic accessory decoder (turnout, decoupler, light, ...) using `LAN_X_SET_TURNOUT`
 - `accessories.switchTurnout(address: number, output?: boolean, activate?: boolean, queue?: boolean)`: Deprecated alias for `setBasicAccessory`, kept for backward compatibility
 - `accessories.setExtAccessory(address: number, aspect: number)`: Send an aspect (0-255) to an extended accessory decoder (e.g. a multi-aspect signal) using `LAN_X_SET_EXT_ACCESSORY`. `address` is the user-facing address (1 = first extended accessory decoder), converted internally to the RCN-213 RawAddress (`address + 3`)
+
+> **⚠️ `setBasicAccessory`/`switchTurnout`: you must send Activate and Deactivate yourself.**
+> With the default `queue=false` (Q=0), the Z21 keeps driving the coil as long as `activate=true` is the last command it received for that address — it does not turn itself off. Most classic accessory decoders (twin-coil/solenoid turnout motors, e.g. Roco/Fleischmann "Doppelspulenantrieb", k83, ...) are pulse-driven: leaving the coil powered for more than a couple hundred milliseconds can overheat and permanently damage it. Always call `setBasicAccessory(address, output, true)` followed shortly after (~100-150ms, per the Z21 LAN Protocol spec) by `setBasicAccessory(address, output, false)` — see the examples below. With `queue=true` (Q=1) the Z21 handles retransmission on the track for you, but you should still send the Deactivate unless you know your specific decoder auto-shuts-off.
 
 ---
 

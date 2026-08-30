@@ -16,6 +16,8 @@ async function main() {
     await z21.system.setBroadcastFlags(true, true, true);
     await delay(300);
 
+    // Activate then Deactivate: most turnout decoders are solenoid-driven and
+    // will overheat if left powered for too long.
     console.log("Switching basic accessory #10 (setBasicAccessory)...");
     await z21.accessories.setBasicAccessory(10, false, true, false);
     await delay(500);

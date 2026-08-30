@@ -74,8 +74,11 @@ async function main() {
     await z21.system.getSerialNumber();
     console.log("SerialNumber requested.");
 
+    // Activate then Deactivate: most turnout decoders are solenoid-driven and
+    // will overheat if left powered for too long.
     await z21.accessories.switchTurnout(accessoryAddress, false);
     console.log(`Turnout ${accessoryAddress} switched to position 1.`);
+    await delay(150);
     await z21.accessories.switchTurnout(accessoryAddress, false, false);
     await delay(3000);
 
@@ -113,6 +116,7 @@ async function main() {
         await delay(2000);
     */
     await z21.accessories.switchTurnout(accessoryAddress, true);
+    await delay(150);
     await z21.accessories.switchTurnout(accessoryAddress, true, false);
     console.log(`Turnout ${accessoryAddress} switched to position 1.`);
     await delay(1000);
