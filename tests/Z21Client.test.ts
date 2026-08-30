@@ -20,6 +20,7 @@ describe("Z21Client", () => {
     // Mock FeedbackParser to control parse returns
     mockParser = {
       parse: jest.fn(),
+      parseAll: jest.fn().mockReturnValue([]),
     };
 
     // Patch the constructor to inject the mock parser
@@ -54,7 +55,7 @@ describe("Z21Client", () => {
     client.on("serialNumber", serialHandler);
 
     // Simulate parser return
-    mockParser.parse.mockReturnValue({ type: "serialNumber", value: 12345 });
+    mockParser.parseAll.mockReturnValue([{ type: "serialNumber", value: 12345 }]);
 
     // Simulate receiving a UDP message
     const messageHandler = mockSocket.on.mock.calls.find((call: any[]) => call[0] === "message")[1];
@@ -68,7 +69,7 @@ describe("Z21Client", () => {
     client.on("stopped", stoppedHandler);
 
     // Simulate parser return
-    mockParser.parse.mockReturnValue({ type: "stopped" });
+    mockParser.parseAll.mockReturnValue([{ type: "stopped" }]);
 
     // Simulate receiving a UDP message
     const messageHandler = mockSocket.on.mock.calls.find((call: any[]) => call[0] === "message")[1];

@@ -46,5 +46,26 @@ export class FeedbackParser {
 
     return null;
   }
+
+  /**
+   * Split a UDP datagram into its concatenated Z21 datasets (Z21 §1.1) and parse each.
+   * A malformed or truncated trailing dataset ends the loop; earlier results are kept.
+   */
+  public parseAll(payload: Buffer): ParserResult[] {
+    const results: ParserResult[] = [];
+    let offset = 0;
+    while (offset + 2 <= payload.length) {
+      const len = payload.readUInt16LE(offset);
+      if (len < 4 || offset + len > payload.length) {
+        break;
+      }
+      const result = this.parse(payload.subarray(offset, offset + len));
+      if (result) {
+        results.push(result);
+      }
+      offset += len;
+    }
+    return results;
+  }
 }
 

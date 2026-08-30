@@ -22,6 +22,12 @@ describe("Z21Client", () => {
     mockParser = {
       parse: jest.fn(),
     };
+    // The transport now calls parseAll; delegate to parse so per-call mock
+    // return values still drive events.
+    mockParser.parseAll = jest.fn((msg: Buffer) => {
+      const result = mockParser.parse(msg);
+      return result ? [result] : [];
+    });
 
     // Patch the constructor to inject the mock parser
     jest.spyOn(require("../src/parsers/feedbackParser"), "FeedbackParser").mockImplementation(() => mockParser);

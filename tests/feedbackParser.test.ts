@@ -505,3 +505,28 @@ describe("FeedbackParser", () => {
 
 });
 
+describe("FeedbackParser.parseAll", () => {
+  const parser = new FeedbackParser();
+
+  const serial = Buffer.from([0x08, 0x00, 0x10, 0x00, 0x78, 0x56, 0x34, 0x12]);
+  const flags = Buffer.from([0x08, 0x00, 0x51, 0x00, 0x07, 0x00, 0x00, 0x00]);
+
+  it("returns one result per concatenated dataset, in order", () => {
+    const results = parser.parseAll(Buffer.concat([serial, flags]));
+    expect(results.map((r) => r.type)).toEqual(["serialNumber", "broadcastFlags"]);
+  });
+
+  it("returns a single result for a single dataset", () => {
+    expect(parser.parseAll(serial).map((r) => r.type)).toEqual(["serialNumber"]);
+  });
+
+  it("stops at a truncated trailing dataset and keeps earlier results", () => {
+    const truncated = Buffer.concat([serial, Buffer.from([0x08, 0x00, 0x10, 0x00, 0x01])]);
+    expect(parser.parseAll(truncated).map((r) => r.type)).toEqual(["serialNumber"]);
+  });
+
+  it("returns [] for an empty buffer", () => {
+    expect(parser.parseAll(Buffer.alloc(0))).toEqual([]);
+  });
+});
+
