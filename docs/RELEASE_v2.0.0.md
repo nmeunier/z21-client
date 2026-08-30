@@ -9,8 +9,11 @@ Date: 2026-08-30
   R-BUS emits a full 80-channel snapshot per group (free channels included);
   diff against the previous snapshot yourself if you need transitions.
 - `setBroadcastFlags(engine, accessory, feedback)` becomes
-  `setBroadcastFlags(flags?: number | BroadcastFlagsOptions)`. The no-argument
-  call still emits `0x07`. Pass `BroadcastFlag.*` bits for full control.
+  `setBroadcastFlags(options?: BroadcastFlagsOptions)` — an options object
+  applied over the historical default `0x07` (`driving | rbus | railcom`):
+  `true` adds a flag, `false` removes it, an omitted field leaves it. The
+  no-argument call still emits `0x07`; `(true, true, true)` →
+  `setBroadcastFlags()`.
 - `getBroadcastFlags()` result fields renamed:
   `engine/accessory/feedback` → `driving/rbus/railcom`, plus new
   `systemState`, `loconetDetector`, `canDetector`.
@@ -26,10 +29,15 @@ Date: 2026-08-30
 - `FeedbackParser` now parses every dataset in a concatenated UDP datagram.
 - A truncated `LAN_LOCONET_DETECTOR` / `LAN_CAN_DETECTOR` frame now surfaces an
   `invalid-payload` error event (previously such frames were ignored).
-- Exported `BroadcastFlag` bit constants.
+- Exported `BroadcastFlag` bit constants (a reference for the
+  `getBroadcastFlags()` `raw` field).
 
 ## Notes
 
 - LocoNet (`LAN_LOCONET_DETECTOR`) and CAN (`LAN_CAN_DETECTOR`) decoding is
   implemented from the Z21 LAN protocol spec and covered by unit tests, but
   has not been validated against real hardware.
+- `setBroadcastFlags({ systemState: true })` / `{ railcom: true }` enable the
+  `LAN_SYSTEMSTATE_DATACHANGED` / `LAN_RAILCOM_DATACHANGED` broadcasts on the
+  wire, but the library does not decode those frames yet — they are visible
+  only on the raw `debug` event.

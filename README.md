@@ -99,7 +99,7 @@ new Z21Client(host: string, port?: number, debug?: boolean)
 - `system.setTrackPowerOn()`: Turn track power on
 - `system.setTrackPowerOff()`: Turn track power off
 - `system.emergencyStop()`: Emergency stop
-- `system.setBroadcastFlags(flags?: number | { driving?, rbus?, railcom?, systemState?, loconetDetector?, canDetector? })`: Set broadcast flags. No argument sends the default `0x07` (driving + R-BUS + RailCom); pass a bitmask (combine `BroadcastFlag.*`) or an options object for full control
+- `system.setBroadcastFlags(options?: { driving?, rbus?, railcom?, systemState?, loconetDetector?, canDetector? })`: Set broadcast flags. No argument sends the default `0x07` (driving + R-BUS + RailCom). Fields are applied over that default: `true` adds a flag, `false` removes it, an omitted field leaves it. `driving`, `rbus`, `loconetDetector` and `canDetector` produce typed events; `systemState` and `railcom` enable the broadcast on the wire but are not decoded yet (read them from the `debug` event)
 - `system.getBroadcastFlags()`: Get broadcast flags (result: `{ raw, driving, rbus, railcom, systemState, loconetDetector, canDetector }`)
 - `system.getRmbusData(groupIndex: 0 | 1)`: Poll an R-BUS feedback group (0 = feedback modules 1-10, 1 = 11-20); triggers an `"occupancy"` event with the current 80-channel snapshot
 - `system.getLoconetDetector(type, reportAddress?)`: Poll LocoNet detectors (**experimental, not tested on real hardware**)
@@ -164,7 +164,7 @@ new Z21Client(host: string, port?: number, debug?: boolean)
 | 1.x | 2.0 |
 | --- | --- |
 | `z21.on("feedback", mods => …)` — `mods: {address, activeInputs}[]` | `z21.on("occupancy", ({ bus, channels }) => …)` — `channels: {address, channel, occupied, nid?}[]` (free channels are now included) |
-| `setBroadcastFlags(engine, accessory, feedback)` | `setBroadcastFlags(number \| { driving?, rbus?, railcom?, systemState?, loconetDetector?, canDetector? })`; `(true,true,true)` → `setBroadcastFlags()` |
+| `setBroadcastFlags(engine, accessory, feedback)` | `setBroadcastFlags({ driving?, rbus?, railcom?, systemState?, loconetDetector?, canDetector? })`; `(true,true,true)` → `setBroadcastFlags()` |
 | `getBroadcastFlags()` result `{ raw, engine, accessory, feedback }` | `{ raw, driving, rbus, railcom, systemState, loconetDetector, canDetector }` |
 | types `FeedbackModuleStatus`, `FeedbackResult` | `OccupancyResult` / `OccupancyChannel`, `TransponderResult` / `TransponderChannel` |
 

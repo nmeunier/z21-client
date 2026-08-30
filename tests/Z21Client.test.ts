@@ -176,21 +176,16 @@ describe("Z21Client", () => {
     expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x07, 0x00, 0x00, 0x08]);
   });
 
-  it("setBroadcastFlags(0) sends all-zero flags", async () => {
-    await client.system.setBroadcastFlags(0);
+  it("setBroadcastFlags({ driving: false, rbus: false, railcom: false }) clears every default flag", async () => {
+    await client.system.setBroadcastFlags({ driving: false, rbus: false, railcom: false });
     const sent: Buffer = mockSocket.send.mock.calls[0][0];
     expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x00, 0x00, 0x00, 0x00]);
   });
 
-  it("setBroadcastFlags(raw number) is sent verbatim as 32-bit LE", async () => {
-    await client.system.setBroadcastFlags(0x08000000);
+  it("setBroadcastFlags({}) is identical to the no-argument call", async () => {
+    await client.system.setBroadcastFlags({});
     const sent: Buffer = mockSocket.send.mock.calls[0][0];
-    expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x00, 0x00, 0x00, 0x08]);
-  });
-
-  it("setBroadcastFlags rejects out-of-range raw values", async () => {
-    await expect(client.system.setBroadcastFlags(-1)).rejects.toThrow(RangeError);
-    await expect(client.system.setBroadcastFlags(0x1_0000_0000)).rejects.toThrow(RangeError);
+    expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x07, 0x00, 0x00, 0x00]);
   });
 
   describe("feedback poll commands", () => {

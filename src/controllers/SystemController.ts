@@ -19,36 +19,34 @@ export class SystemController {
 
 
   /**
-   * Set the Z21 broadcast flags for this client (Z21 §2.16).
-   * - no argument: sends the historical default 0x07 (driving | rbus | railcom)
-   * - number: a raw 32-bit mask, validated and sent verbatim (use BroadcastFlag.*)
-   * - options object: applied on top of the 0x07 base (true sets, false clears)
+   * Set this client's Z21 broadcast flags (Z21 §2.16).
+   *
+   * Fields are applied on top of the historical default `0x07`
+   * (`driving | rbus | railcom`): `true` adds a flag, `false` removes it, and
+   * an omitted field leaves the default untouched. So
+   * `setBroadcastFlags({ loconetDetector: true })` subscribes to
+   * driving + R-BUS + RailCom **and** LocoNet detectors — not LocoNet alone.
+   * `setBroadcastFlags()` with no argument re-sends the plain `0x07`.
+   *
+   * Flags that currently produce a typed event: `driving`, `rbus`,
+   * `loconetDetector`, `canDetector`. `systemState` and `railcom` enable the
+   * broadcast on the wire, but the library does not decode those frames yet —
+   * read them from the raw `debug` event.
    */
-  public async setBroadcastFlags(flags?: number | BroadcastFlagsOptions): Promise<void> {
-    const BASE = BroadcastFlag.DRIVING | BroadcastFlag.RBUS | BroadcastFlag.RAILCOM; // 0x07
-    let value: number;
+  public async setBroadcastFlags(options: BroadcastFlagsOptions = {}): Promise<void> {
+    let value = BroadcastFlag.DRIVING | BroadcastFlag.RBUS | BroadcastFlag.RAILCOM; // 0x07
 
-    if (flags === undefined) {
-      value = BASE;
-    } else if (typeof flags === "number") {
-      if (!Number.isInteger(flags) || flags < 0 || flags > 0xffffffff) {
-        throw new RangeError("setBroadcastFlags: raw flags must be a uint32");
-      }
-      value = flags;
-    } else {
-      value = BASE;
-      const apply = (bit: number, on: boolean | undefined) => {
-        if (on === true) value |= bit;
-        else if (on === false) value &= ~bit;
-      };
-      apply(BroadcastFlag.DRIVING, flags.driving);
-      apply(BroadcastFlag.RBUS, flags.rbus);
-      apply(BroadcastFlag.RAILCOM, flags.railcom);
-      apply(BroadcastFlag.SYSTEM_STATE, flags.systemState);
-      apply(BroadcastFlag.LOCONET_DETECTOR, flags.loconetDetector);
-      apply(BroadcastFlag.CAN_DETECTOR, flags.canDetector);
-      value >>>= 0;
-    }
+    const apply = (bit: number, on: boolean | undefined) => {
+      if (on === true) value |= bit;
+      else if (on === false) value &= ~bit;
+    };
+    apply(BroadcastFlag.DRIVING, options.driving);
+    apply(BroadcastFlag.RBUS, options.rbus);
+    apply(BroadcastFlag.RAILCOM, options.railcom);
+    apply(BroadcastFlag.SYSTEM_STATE, options.systemState);
+    apply(BroadcastFlag.LOCONET_DETECTOR, options.loconetDetector);
+    apply(BroadcastFlag.CAN_DETECTOR, options.canDetector);
+    value >>>= 0;
 
     // Flags on 4 bytes (Little Endian)
     const payload = [
