@@ -8,16 +8,16 @@
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22-brightgreen.svg)](https://nodejs.org/)
 
 
-**z21-client** is a TypeScript library that implements the Roco/Fleischmann Z21 LAN protocol over Ethernet/UDP.
+**z21-client** is a TypeScript client library for connecting a Node.js application to a Roco/Fleischmann **Z21** command station over Ethernet/UDP, speaking the Z21 LAN protocol.
 It gives you a typed, event-driven API to drive locomotives, operate accessories, read and write CVs, and receive occupancy and system events as they happen.
 
-It stays close to the wire: it encodes and decodes Z21 LAN frames and leaves higher-level concerns (decoder-specific CV meanings, layout state, automation) to your application.
+It stays close to the wire: it implements the published Z21 LAN protocol — encoding and decoding frames — and leaves higher-level concerns (decoder-specific CV meanings, layout state, automation) to your application.
 
 ---
 
 ## Features
 
-- Talk to a Z21 over Ethernet/UDP (frame encoding and decoding handled for you)
+- Connect to a Z21 command station over Ethernet/UDP (frame encoding and decoding handled for you)
 - Control track power, emergency stop, turnouts, and engine functions
 - Drive engines with speed and direction
 - Read and write CVs (configuration variables)

@@ -1,7 +1,7 @@
 {
   "name": "z21-client",
   "version": "2.0.0",
-  "description": "TypeScript library implementing the Roco/Fleischmann Z21 LAN protocol (Ethernet/UDP)",
+  "description": "TypeScript client library to connect to a Roco/Fleischmann Z21 command station over the Z21 LAN protocol (Ethernet/UDP)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
