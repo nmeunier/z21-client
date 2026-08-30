@@ -152,12 +152,45 @@ describe("Z21Client", () => {
     expect(Array.from(sentBuffer.subarray(2, 6))).toEqual([0x40, 0x00, 0x80, 0x80]);
   });
 
-  it("should send a UDP packet for setBroadcastFlags", async () => {
-    await client.system.setBroadcastFlags(true, true, true);
-    expect(mockSocket.send).toHaveBeenCalledTimes(1);
-    const sentBuffer: Buffer = mockSocket.send.mock.calls[0][0];
-    // [0x50, 0x00, 0x07, 0x00, 0x00, 0x00] for all flags set to true
-    expect(Array.from(sentBuffer.subarray(2, 8))).toEqual([0x50, 0x00, 0x07, 0x00, 0x00, 0x00]);
+  it("setBroadcastFlags() with no argument sends the historical 0x07", async () => {
+    await client.system.setBroadcastFlags();
+    const sent: Buffer = mockSocket.send.mock.calls[0][0];
+    expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x07, 0x00, 0x00, 0x00]);
+  });
+
+  it("setBroadcastFlags({ canDetector: true }) ORs the CAN detector bit onto the base", async () => {
+    await client.system.setBroadcastFlags({ canDetector: true });
+    const sent: Buffer = mockSocket.send.mock.calls[0][0];
+    expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x07, 0x00, 0x08, 0x00]);
+  });
+
+  it("setBroadcastFlags({ rbus: false }) clears the R-BUS bit", async () => {
+    await client.system.setBroadcastFlags({ rbus: false });
+    const sent: Buffer = mockSocket.send.mock.calls[0][0];
+    expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x05, 0x00, 0x00, 0x00]);
+  });
+
+  it("setBroadcastFlags({ loconetDetector: true }) sets bit 27", async () => {
+    await client.system.setBroadcastFlags({ loconetDetector: true });
+    const sent: Buffer = mockSocket.send.mock.calls[0][0];
+    expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x07, 0x00, 0x00, 0x08]);
+  });
+
+  it("setBroadcastFlags(0) sends all-zero flags", async () => {
+    await client.system.setBroadcastFlags(0);
+    const sent: Buffer = mockSocket.send.mock.calls[0][0];
+    expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x00, 0x00, 0x00, 0x00]);
+  });
+
+  it("setBroadcastFlags(raw number) is sent verbatim as 32-bit LE", async () => {
+    await client.system.setBroadcastFlags(0x08000000);
+    const sent: Buffer = mockSocket.send.mock.calls[0][0];
+    expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x00, 0x00, 0x00, 0x08]);
+  });
+
+  it("setBroadcastFlags rejects out-of-range raw values", async () => {
+    await expect(client.system.setBroadcastFlags(-1)).rejects.toThrow(RangeError);
+    await expect(client.system.setBroadcastFlags(0x1_0000_0000)).rejects.toThrow(RangeError);
   });
 
 });

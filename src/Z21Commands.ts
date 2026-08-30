@@ -13,3 +13,15 @@ export const commands = {
   LAN_X_TRACK_POWER_ON: [0x40, 0x00, 0x21, 0x81, 0xa0],
   LAN_X_SET_STOP: [0x40, 0x00, 0x80, 0x80],
 };
+
+/** Bit values for LAN_SET_BROADCASTFLAGS (Z21 §2.16), 32-bit little endian on the wire. */
+export const BroadcastFlag = {
+  DRIVING:          0x00000001, // loco info, turnout info, power broadcasts
+  RBUS:             0x00000002, // LAN_RMBUS_DATACHANGED
+  RAILCOM:          0x00000004, // RailCom for subscribed locos
+  SYSTEM_STATE:     0x00000100, // LAN_SYSTEMSTATE_DATACHANGED
+  RAILCOM_ALL:      0x00040000, // RailCom for all locos (FW >= 1.29)
+  CAN_BOOSTER:      0x00020000, // CAN booster status (FW >= 1.41)
+  CAN_DETECTOR:     0x00080000, // LAN_CAN_DETECTOR (FW >= 1.30)
+  LOCONET_DETECTOR: 0x08000000, // LAN_LOCONET_DETECTOR (FW >= 1.22)
+} as const;

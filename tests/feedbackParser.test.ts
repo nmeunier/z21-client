@@ -279,10 +279,13 @@ describe("FeedbackParser", () => {
       type: "broadcastFlags",
       value: {
         raw: 0x07,
-        engine: true,
-        accessory: true,
-        feedback: true,
-      }
+        driving: true,
+        rbus: true,
+        railcom: true,
+        systemState: false,
+        loconetDetector: false,
+        canDetector: false,
+      },
     });
   });
 

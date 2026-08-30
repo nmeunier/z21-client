@@ -26,9 +26,12 @@ export interface BroadcastFlagsResult {
 
 export interface BroadcastFlagsResultData {
     raw: number;
-    engine: boolean;
-    accessory: boolean;
-    feedback: boolean;
+    driving: boolean;          // 0x00000001
+    rbus: boolean;             // 0x00000002
+    railcom: boolean;          // 0x00000004
+    systemState: boolean;      // 0x00000100
+    loconetDetector: boolean;  // 0x08000000
+    canDetector: boolean;      // 0x00080000
 }
 
 // LANX Parser results

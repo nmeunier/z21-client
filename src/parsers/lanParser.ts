@@ -26,9 +26,12 @@ export class LanParser {
             type: "broadcastFlags",
             value: {
               raw: flags,
-              engine: !!(flags & 0x01),
-              accessory: !!(flags & 0x02),
-              feedback: !!(flags & 0x04),
+              driving: !!(flags & 0x00000001),
+              rbus: !!(flags & 0x00000002),
+              railcom: !!(flags & 0x00000004),
+              systemState: !!(flags & 0x00000100),
+              loconetDetector: !!(flags & 0x08000000),
+              canDetector: !!(flags & 0x00080000),
             },
           };
         } else {
