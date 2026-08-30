@@ -1,4 +1,4 @@
-import { DetectorParser, decodeLoconetDirection } from "../src/parsers/detectorParser";
+import { DetectorParser, decodeLoconetDirection, decodeCanDirection } from "../src/parsers/detectorParser";
 import { OccupancyResult } from "../src/parsers/parserResult";
 
 describe("DetectorParser — R-BUS (0x80)", () => {
@@ -140,6 +140,89 @@ describe("DetectorParser — LocoNet (0xA4) [experimental]", () => {
     expect(parser.parse(0xa4, ln(0x02, 7, [0x01]))).toEqual({
       type: "error",
       value: { code: "invalid-payload", message: "LAN_LOCONET_DETECTOR frame too short" },
+    });
+  });
+});
+
+describe("decodeCanDirection", () => {
+  it("bits 00/01 -> unknown", () => {
+    expect(decodeCanDirection(0x0005)).toBe("unknown");
+    expect(decodeCanDirection(0x4005)).toBe("unknown");
+  });
+  it("bits 10 -> forward", () => {
+    expect(decodeCanDirection(0x8005)).toBe("forward");
+  });
+  it("bits 11 -> reverse", () => {
+    expect(decodeCanDirection(0xc005)).toBe("reverse");
+  });
+});
+
+describe("DetectorParser — CAN (0xC4) [experimental]", () => {
+  const parser = new DetectorParser();
+  // payload = nid(2 LE) + addr(2 LE) + port(1) + type(1) + value1(2 LE) + value2(2 LE)
+  const can = (type: number, value1: number, value2 = 0, opts: { nid?: number; addr?: number; port?: number } = {}) => {
+    const nid = opts.nid ?? 0xd001;
+    const addr = opts.addr ?? 0x000a;
+    const port = opts.port ?? 3;
+    return Buffer.from([
+      nid & 0xff, (nid >> 8) & 0xff,
+      addr & 0xff, (addr >> 8) & 0xff,
+      port, type,
+      value1 & 0xff, (value1 >> 8) & 0xff,
+      value2 & 0xff, (value2 >> 8) & 0xff,
+    ]);
+  };
+
+  it.each([
+    [0x0000, false],
+    [0x0100, false],
+    [0x1000, true],
+    [0x1100, true],
+    [0x1201, true],
+    [0x1202, true],
+    [0x1203, true],
+  ])("type 0x01 value1=0x%s -> occupied=%s", (value1, occupied) => {
+    expect(parser.parse(0xc4, can(0x01, value1 as number))).toEqual({
+      type: "occupancy",
+      value: {
+        bus: "can",
+        channels: [{ address: 0x000a, channel: 3, nid: 0xd001, occupied: occupied as boolean }],
+      },
+    });
+  });
+
+  it("type 0x11: two RailCom loco addresses with direction", () => {
+    // value1 = 0x8000 | 1234 (forward), value2 = 0xC000 | 56 (reverse)
+    const result = parser.parse(0xc4, can(0x11, 0x8000 | 1234, 0xc000 | 56)) as any;
+    expect(result.type).toBe("transponder");
+    expect(result.value.bus).toBe("can");
+    expect(result.value.channels).toEqual([
+      { address: 0x000a, channel: 3, nid: 0xd001, locoAddress: 1234, direction: "forward", present: true },
+      { address: 0x000a, channel: 3, nid: 0xd001, locoAddress: 56, direction: "reverse", present: true },
+    ]);
+  });
+
+  it("type 0x11: value2 == 0 yields a single loco", () => {
+    const result = parser.parse(0xc4, can(0x11, 0x8000 | 1234, 0)) as any;
+    expect(result.value.channels).toHaveLength(1);
+    expect(result.value.channels[0].locoAddress).toBe(1234);
+  });
+
+  it("type 0x11: both values 0 yields an empty list", () => {
+    expect(parser.parse(0xc4, can(0x11, 0, 0))).toEqual({
+      type: "transponder",
+      value: { bus: "can", channels: [] },
+    });
+  });
+
+  it("unknown type is ignored", () => {
+    expect(parser.parse(0xc4, can(0x05, 0x1000))).toBeNull();
+  });
+
+  it("truncated frame returns an error", () => {
+    expect(parser.parse(0xc4, Buffer.alloc(9))).toEqual({
+      type: "error",
+      value: { code: "invalid-payload", message: "LAN_CAN_DETECTOR frame too short" },
     });
   });
 });

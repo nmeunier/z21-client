@@ -1,4 +1,4 @@
-import { ParserResult, OccupancyChannel, Direction } from "./parserResult";
+import { ParserResult, OccupancyChannel, TransponderChannel, Direction } from "./parserResult";
 
 const tooShort = (command: string): ParserResult => ({
   type: "error",
@@ -9,6 +9,14 @@ const tooShort = (command: string): ParserResult => ({
 export function decodeLoconetDirection(b: number): Direction {
   if ((b & 0x40) === 0) return "unknown";
   return (b & 0x20) === 0 ? "forward" : "reverse";
+}
+
+/** Decode the 2 direction bits (15..14) of a CAN RailCom loco value. */
+export function decodeCanDirection(v: number): Direction {
+  const d = (v >> 14) & 0x3;
+  if (d === 0b10) return "forward";
+  if (d === 0b11) return "reverse";
+  return "unknown";
 }
 
 export class DetectorParser {
@@ -23,6 +31,8 @@ export class DetectorParser {
         return this.parseRbus(payload);
       case 0xa4:
         return this.parseLoconet(payload);
+      case 0xc4:
+        return this.parseCan(payload);
       default:
         return null;
     }
@@ -96,5 +106,46 @@ export class DetectorParser {
       default: // 0x12 LISSY speed + any future/unknown type
         return null;
     }
+  }
+
+  /** LAN_CAN_DETECTOR (Z21 §10.1). @experimental not tested on real hardware. */
+  private parseCan(payload: Buffer): ParserResult | null {
+    if (payload.length < 10) {
+      return tooShort("LAN_CAN_DETECTOR");
+    }
+    const nid = payload.readUInt16LE(0);
+    const address = payload.readUInt16LE(2);
+    const channel = payload[4]; // CAN port 0..7
+    const type = payload[5];
+    const value1 = payload.readUInt16LE(6);
+    const value2 = payload.readUInt16LE(8);
+
+    if (type === 0x01) {
+      return {
+        type: "occupancy",
+        value: {
+          bus: "can",
+          channels: [{ address, channel, nid, occupied: (value1 & 0x1000) !== 0 }],
+        },
+      };
+    }
+
+    if (type >= 0x11 && type <= 0x1f) {
+      const channels: TransponderChannel[] = [];
+      for (const v of [value1, value2]) {
+        if (v === 0) continue; // 0 = no loco / end of list
+        channels.push({
+          address,
+          channel,
+          nid,
+          locoAddress: v & 0x3fff,
+          direction: decodeCanDirection(v),
+          present: true,
+        });
+      }
+      return { type: "transponder", value: { bus: "can", channels } };
+    }
+
+    return null;
   }
 }
