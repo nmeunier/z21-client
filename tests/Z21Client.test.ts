@@ -78,6 +78,17 @@ describe("Z21Client", () => {
     expect(stoppedHandler).toHaveBeenCalled();
   });
 
+  it("should emit occupancy event when the parser yields an occupancy result", () => {
+    const handler = jest.fn();
+    client.on("occupancy", handler);
+    mockParser.parseAll.mockReturnValue([
+      { type: "occupancy", value: { bus: "rbus", channels: [] } },
+    ]);
+    const messageHandler = mockSocket.on.mock.calls.find((c: any[]) => c[0] === "message")[1];
+    messageHandler(Buffer.alloc(4));
+    expect(handler).toHaveBeenCalledWith({ bus: "rbus", channels: [] });
+  });
+
   it("should close the UDP socket", async () => {
     await client.close();
     expect(mockSocket.close).toHaveBeenCalled();

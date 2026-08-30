@@ -119,16 +119,6 @@ export interface CvResultData {
     value: number;
 }
 
-export interface FeedbackModuleStatus {
-    address: number;
-    activeInputs: number[];
-}
-
-export interface FeedbackResult {
-    type: "feedback";
-    value: FeedbackModuleStatus[];
-}
-
 // Detector results (R-BUS / LocoNet / CAN)
 export type FeedbackBus = "rbus" | "loconet" | "can";
 export type TransponderBus = "loconet" | "can";
@@ -178,6 +168,5 @@ export type ParserResult =
     | ExtAccessoryInfoResult
     | EngineInfoResult
     | CvResult
-    | FeedbackResult
     | OccupancyResult
     | TransponderResult;
