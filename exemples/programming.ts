@@ -71,7 +71,7 @@ async function main() {
 
   try {
 
-    await z21.system.setBroadcastFlags(true, true, true);
+    await z21.system.setBroadcastFlags();
     console.log("Broadcast flags set.");
     await delay(2000);
 

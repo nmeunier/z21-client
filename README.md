@@ -98,8 +98,11 @@ new Z21Client(host: string, port?: number, debug?: boolean)
 - `system.setTrackPowerOn()`: Turn track power on
 - `system.setTrackPowerOff()`: Turn track power off
 - `system.emergencyStop()`: Emergency stop
-- `system.setBroadcastFlags(engine?: boolean, accessory?: boolean, feedback?: boolean)`: Set broadcast flags
-- `system.getBroadcastFlags()`: Get broadcast flags
+- `system.setBroadcastFlags(flags?: number | { driving?, rbus?, railcom?, systemState?, loconetDetector?, canDetector? })`: Set broadcast flags. No argument sends the default `0x07` (driving + R-BUS + RailCom); pass a bitmask (combine `BroadcastFlag.*`) or an options object for full control
+- `system.getBroadcastFlags()`: Get broadcast flags (result: `{ raw, driving, rbus, railcom, systemState, loconetDetector, canDetector }`)
+- `system.getRmbusData(groupIndex: 0 | 1)`: Poll an R-BUS feedback group (0 = feedback modules 1-10, 1 = 11-20); triggers an `"occupancy"` event with the current 80-channel snapshot
+- `system.getLoconetDetector(type, reportAddress?)`: Poll LocoNet detectors (**experimental, not tested on real hardware**)
+- `system.getCanDetector(nid?)`: Poll CAN detectors (**experimental, not tested on real hardware**)
 - `system.getSerialNumber()`: Get Z21 serial number
 - `system.getStatus()`: Get Z21 status
 
@@ -147,10 +150,22 @@ new Z21Client(host: string, port?: number, debug?: boolean)
 - `"cvResult"`: CV read/write result
 - `"accessoryInfo"`: Basic accessory/turnout info
 - `"extAccessoryInfo"`: Extended accessory (signal) aspect info
-- `"feedback"`: Feedback module updates ()
+- `"occupancy"`: `{ bus, channels: { address, channel, occupied, nid? }[] }` — occupancy snapshot for R-BUS, LocoNet or CAN
+- `"transponder"` (**experimental, not tested on real hardware**): `{ bus, channels: { address, channel, locoAddress, direction, present, nid? }[] }` — LocoNet transponder / LISSY loco reports and CAN RailCom loco lists
 - `"unknownBroadcast"`: Unknown broadcast received
 - `"error"`: UDP or protocol errors
 - `"debug"`: Debug messages
+
+---
+
+## Migration 1.x → 2.0
+
+| 1.x | 2.0 |
+| --- | --- |
+| `z21.on("feedback", mods => …)` — `mods: {address, activeInputs}[]` | `z21.on("occupancy", ({ bus, channels }) => …)` — `channels: {address, channel, occupied, nid?}[]` (free channels are now included) |
+| `setBroadcastFlags(engine, accessory, feedback)` | `setBroadcastFlags(number \| { driving?, rbus?, railcom?, systemState?, loconetDetector?, canDetector? })`; `(true,true,true)` → `setBroadcastFlags()` |
+| `getBroadcastFlags()` result `{ raw, engine, accessory, feedback }` | `{ raw, driving, rbus, railcom, systemState, loconetDetector, canDetector }` |
+| types `FeedbackModuleStatus`, `FeedbackResult` | `OccupancyResult` / `OccupancyChannel`, `TransponderResult` / `TransponderChannel` |
 
 ---
 

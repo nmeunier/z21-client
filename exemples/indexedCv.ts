@@ -13,7 +13,7 @@ async function main() {
   });
 
   try {
-    await z21.system.setBroadcastFlags(true, true, true);
+    await z21.system.setBroadcastFlags();
     await delay(1000);
 
     // ESU indexed CV convention: CV31=0, CV32=255 selects the page holding

@@ -13,7 +13,7 @@ async function main() {
   z21.on("error", (err) => console.error("[error]", err));
 
   try {
-    await z21.system.setBroadcastFlags(true, true, true);
+    await z21.system.setBroadcastFlags();
     await delay(300);
 
     // Activate then Deactivate: most turnout decoders are solenoid-driven and
