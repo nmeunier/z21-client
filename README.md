@@ -195,6 +195,22 @@ MIT
 
 ---
 
+## Disclaimer & trademarks
+
+This is an independent, unofficial project. It is not affiliated with, authorized, sponsored, or endorsed by any of the companies named below, and it is not built from any confidential material.
+
+- **Z21** is a trademark of Modelleisenbahn GmbH.
+- **Roco** and **Fleischmann** are trademarks of Modelleisenbahn GmbH.
+- **LocoNet** is a registered trademark of Digitrax, Inc.
+- **RailCom** is a registered trademark of Lenz Elektronik GmbH.
+- **LISSY** / **MARCO** are products of Uhlenbrock Elektronik GmbH.
+
+All other product names, logos, and brands are the property of their respective owners. They are used here only to identify the hardware and protocol this library interoperates with, under nominative fair use.
+
+The Z21 LAN protocol is documented publicly by the manufacturer at [z21.eu](https://www.z21.eu/en/downloads); this library is an independent implementation of that published specification.
+
+---
+
 ## Author
 
 Nicolas Meunier
