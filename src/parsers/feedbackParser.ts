@@ -1,14 +1,17 @@
 import { LanXParser } from "./lanXParser";
 import { LanParser } from "./lanParser";
+import { DetectorParser } from "./detectorParser";
 import { ParserResult } from "./parserResult";
 
 export class FeedbackParser {
   private lanParser: LanParser;
   private lanXParser: LanXParser;
+  private detectorParser: DetectorParser;
 
   constructor() {
     this.lanParser = new LanParser();
     this.lanXParser = new LanXParser();
+    this.detectorParser = new DetectorParser();
   }
 
   public parse(payload: Buffer): ParserResult | null {
@@ -39,12 +42,46 @@ export class FeedbackParser {
     if (data[0] === 0x40) {
       // LAN_X command: remove first 2 bytes of LAN_X header
       return this.lanXParser.parse(Buffer.from(data.subarray(2)));
-    } else if (data[0] === 0x10 || data[0] === 0x51 || data[0] === 0x80) {
+    } else if (data[0] === 0x10 || data[0] === 0x51) {
       // LAN command
       return this.lanParser.parse(data[0], data.subarray(2));
+    } else if (data[0] === 0x80 || data[0] === 0xa4 || data[0] === 0xc4) {
+      // Detector frame: R-BUS (0x80), LocoNet (0xA4), CAN (0xC4)
+      return this.detectorParser.parse(data[0], data.subarray(2));
     }
 
     return null;
+  }
+
+  /**
+   * Split a UDP datagram into its concatenated Z21 datasets (Z21 §1.1) and parse each.
+   * A malformed or truncated trailing dataset ends the loop; earlier results are kept.
+   */
+  public parseAll(payload: Buffer): ParserResult[] {
+    const results: ParserResult[] = [];
+    let offset = 0;
+    while (offset + 2 <= payload.length) {
+      const len = payload.readUInt16LE(offset);
+      if (len < 4 || offset + len > payload.length) {
+        break;
+      }
+      const result = this.parse(payload.subarray(offset, offset + len));
+      if (result) {
+        results.push(result);
+      }
+      offset += len;
+    }
+
+    // A datagram whose first bytes don't form a valid dataset used to raise an
+    // error via parse(); preserve that signal instead of returning silently.
+    if (results.length === 0 && offset < payload.length) {
+      const first = this.parse(payload);
+      if (first && first.type === "error") {
+        return [first];
+      }
+    }
+
+    return results;
   }
 }
 

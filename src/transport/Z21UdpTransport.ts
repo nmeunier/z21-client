@@ -38,16 +38,13 @@ export class Z21UdpTransport extends EventEmitter {
    * @param msg Incoming UDP message buffer
    */
   private handleMessage(msg: Buffer) {
-
     if (this.debug) {
       this.emit("debug", msg);
     }
 
-    const parsed = this.feedbackParser.parse(msg);
-    if (parsed) {
-      this.emit(parsed.type, "value" in parsed ? parsed.value : undefined);
+    for (const result of this.feedbackParser.parseAll(msg)) {
+      this.emit(result.type, "value" in result ? result.value : undefined);
     }
-
   }
 
   /**

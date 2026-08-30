@@ -49,8 +49,12 @@ async function main() {
     console.log("Programming mode response:", payload);
   });
 
-  z21.on("feedback", (payload) => {
-    console.log("Feedback response:", payload);
+  z21.on("occupancy", (payload) => {
+    console.log("Occupancy:", payload.bus, payload.channels);
+  });
+
+  z21.on("transponder", (payload) => {
+    console.log("Transponder (experimental):", payload.bus, payload.channels);
   });
 
   z21.on("error", (err) => {
@@ -60,7 +64,7 @@ async function main() {
 
   try {
 
-    await z21.system.setBroadcastFlags(true, true, true);
+    await z21.system.setBroadcastFlags();
     console.log("Broadcast flags set.");
     await delay(2000);
 
@@ -74,8 +78,11 @@ async function main() {
     await z21.system.getSerialNumber();
     console.log("SerialNumber requested.");
 
+    // Activate then Deactivate: most turnout decoders are solenoid-driven and
+    // will overheat if left powered for too long.
     await z21.accessories.switchTurnout(accessoryAddress, false);
     console.log(`Turnout ${accessoryAddress} switched to position 1.`);
+    await delay(150);
     await z21.accessories.switchTurnout(accessoryAddress, false, false);
     await delay(3000);
 
@@ -113,6 +120,7 @@ async function main() {
         await delay(2000);
     */
     await z21.accessories.switchTurnout(accessoryAddress, true);
+    await delay(150);
     await z21.accessories.switchTurnout(accessoryAddress, true, false);
     console.log(`Turnout ${accessoryAddress} switched to position 1.`);
     await delay(1000);

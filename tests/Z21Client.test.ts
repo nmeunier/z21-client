@@ -20,6 +20,7 @@ describe("Z21Client", () => {
     // Mock FeedbackParser to control parse returns
     mockParser = {
       parse: jest.fn(),
+      parseAll: jest.fn().mockReturnValue([]),
     };
 
     // Patch the constructor to inject the mock parser
@@ -54,7 +55,7 @@ describe("Z21Client", () => {
     client.on("serialNumber", serialHandler);
 
     // Simulate parser return
-    mockParser.parse.mockReturnValue({ type: "serialNumber", value: 12345 });
+    mockParser.parseAll.mockReturnValue([{ type: "serialNumber", value: 12345 }]);
 
     // Simulate receiving a UDP message
     const messageHandler = mockSocket.on.mock.calls.find((call: any[]) => call[0] === "message")[1];
@@ -68,13 +69,24 @@ describe("Z21Client", () => {
     client.on("stopped", stoppedHandler);
 
     // Simulate parser return
-    mockParser.parse.mockReturnValue({ type: "stopped" });
+    mockParser.parseAll.mockReturnValue([{ type: "stopped" }]);
 
     // Simulate receiving a UDP message
     const messageHandler = mockSocket.on.mock.calls.find((call: any[]) => call[0] === "message")[1];
     messageHandler(Buffer.from([0x06, 0x00, 0x40, 0x00, 0x81, 0x81]));
 
     expect(stoppedHandler).toHaveBeenCalled();
+  });
+
+  it("should emit occupancy event when the parser yields an occupancy result", () => {
+    const handler = jest.fn();
+    client.on("occupancy", handler);
+    mockParser.parseAll.mockReturnValue([
+      { type: "occupancy", value: { bus: "rbus", channels: [] } },
+    ]);
+    const messageHandler = mockSocket.on.mock.calls.find((c: any[]) => c[0] === "message")[1];
+    messageHandler(Buffer.alloc(4));
+    expect(handler).toHaveBeenCalledWith({ bus: "rbus", channels: [] });
   });
 
   it("should close the UDP socket", async () => {
@@ -140,12 +152,103 @@ describe("Z21Client", () => {
     expect(Array.from(sentBuffer.subarray(2, 6))).toEqual([0x40, 0x00, 0x80, 0x80]);
   });
 
-  it("should send a UDP packet for setBroadcastFlags", async () => {
-    await client.system.setBroadcastFlags(true, true, true);
-    expect(mockSocket.send).toHaveBeenCalledTimes(1);
-    const sentBuffer: Buffer = mockSocket.send.mock.calls[0][0];
-    // [0x50, 0x00, 0x07, 0x00, 0x00, 0x00] for all flags set to true
-    expect(Array.from(sentBuffer.subarray(2, 8))).toEqual([0x50, 0x00, 0x07, 0x00, 0x00, 0x00]);
+  it("setBroadcastFlags() with no argument sends the historical 0x07", async () => {
+    await client.system.setBroadcastFlags();
+    const sent: Buffer = mockSocket.send.mock.calls[0][0];
+    expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x07, 0x00, 0x00, 0x00]);
+  });
+
+  it("setBroadcastFlags({ canDetector: true }) ORs the CAN detector bit onto the base", async () => {
+    await client.system.setBroadcastFlags({ canDetector: true });
+    const sent: Buffer = mockSocket.send.mock.calls[0][0];
+    expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x07, 0x00, 0x08, 0x00]);
+  });
+
+  it("setBroadcastFlags({ rbus: false }) clears the R-BUS bit", async () => {
+    await client.system.setBroadcastFlags({ rbus: false });
+    const sent: Buffer = mockSocket.send.mock.calls[0][0];
+    expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x05, 0x00, 0x00, 0x00]);
+  });
+
+  it("setBroadcastFlags({ loconetDetector: true }) sets bit 27", async () => {
+    await client.system.setBroadcastFlags({ loconetDetector: true });
+    const sent: Buffer = mockSocket.send.mock.calls[0][0];
+    expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x07, 0x00, 0x00, 0x08]);
+  });
+
+  it("setBroadcastFlags({ driving: false, rbus: false, railcom: false }) clears every default flag", async () => {
+    await client.system.setBroadcastFlags({ driving: false, rbus: false, railcom: false });
+    const sent: Buffer = mockSocket.send.mock.calls[0][0];
+    expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x00, 0x00, 0x00, 0x00]);
+  });
+
+  it("setBroadcastFlags({}) is identical to the no-argument call", async () => {
+    await client.system.setBroadcastFlags({});
+    const sent: Buffer = mockSocket.send.mock.calls[0][0];
+    expect(Array.from(sent.subarray(2, 8))).toEqual([0x50, 0x00, 0x07, 0x00, 0x00, 0x00]);
+  });
+
+  describe("feedback poll commands", () => {
+    const sent = () => Array.from((mockSocket.send.mock.calls[0][0] as Buffer).subarray(2));
+
+    it("getRmbusData(0) sends [0x81, 0x00, 0x00]", async () => {
+      await client.system.getRmbusData(0);
+      expect(sent()).toEqual([0x81, 0x00, 0x00]);
+    });
+
+    it("getRmbusData(1) sends [0x81, 0x00, 0x01]", async () => {
+      await client.system.getRmbusData(1);
+      expect(sent()).toEqual([0x81, 0x00, 0x01]);
+    });
+
+    it("getRmbusData rejects an out-of-range group index", async () => {
+      await expect(client.system.getRmbusData(2 as 0 | 1)).rejects.toThrow(RangeError);
+    });
+
+    it("getLoconetDetector(0x80) sends a SIC request with a zero address", async () => {
+      await client.system.getLoconetDetector(0x80);
+      expect(sent()).toEqual([0xa4, 0x00, 0x80, 0x00, 0x00]);
+    });
+
+    it("getLoconetDetector(0x81, 1017) sends the report address decremented by 1", async () => {
+      await client.system.getLoconetDetector(0x81, 1017); // 1016 = 0x03F8
+      expect(sent()).toEqual([0xa4, 0x00, 0x81, 0xf8, 0x03]);
+    });
+
+    it("getLoconetDetector(0x82, 100) sends the report address unchanged (LE)", async () => {
+      await client.system.getLoconetDetector(0x82, 100); // 100 = 0x0064
+      expect(sent()).toEqual([0xa4, 0x00, 0x82, 0x64, 0x00]);
+    });
+
+    it("getLoconetDetector(0x81, 0) rejects a report address below 1", async () => {
+      await expect(client.system.getLoconetDetector(0x81, 0)).rejects.toThrow(RangeError);
+    });
+
+    it("getLoconetDetector(0x82, 0x1ffff) rejects a report address above uint16", async () => {
+      await expect(client.system.getLoconetDetector(0x82, 0x1_ffff)).rejects.toThrow(RangeError);
+    });
+
+    it("getLoconetDetector rejects an unknown query type", async () => {
+      await expect(client.system.getLoconetDetector(0x99 as any)).rejects.toThrow(RangeError);
+    });
+
+    it("getCanDetector() defaults to NID 0xD000 (all detectors)", async () => {
+      await client.system.getCanDetector();
+      expect(sent()).toEqual([0xc4, 0x00, 0x00, 0x00, 0xd0]);
+    });
+
+    it("getCanDetector(0xC201) sends the NID little endian", async () => {
+      await client.system.getCanDetector(0xc201);
+      expect(sent()).toEqual([0xc4, 0x00, 0x00, 0x01, 0xc2]);
+    });
+
+    it("getCanDetector rejects a non-uint16 NID", async () => {
+      await expect(client.system.getCanDetector(0x1_ffff)).rejects.toThrow(RangeError);
+    });
+
+    it("getCanDetector(-1) rejects a negative NID", async () => {
+      await expect(client.system.getCanDetector(-1)).rejects.toThrow(RangeError);
+    });
   });
 
 });

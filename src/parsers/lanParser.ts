@@ -26,43 +26,18 @@ export class LanParser {
             type: "broadcastFlags",
             value: {
               raw: flags,
-              engine: !!(flags & 0x01),
-              accessory: !!(flags & 0x02),
-              feedback: !!(flags & 0x04),
+              driving: !!(flags & 0x00000001),
+              rbus: !!(flags & 0x00000002),
+              railcom: !!(flags & 0x00000004),
+              systemState: !!(flags & 0x00000100),
+              loconetDetector: !!(flags & 0x08000000),
+              canDetector: !!(flags & 0x00080000),
             },
           };
         } else {
           console.log("[LAN Parser] Payload too short for GET_BROADCAST_FLAGS");
           return null;
         }
-
-      case 0x80: // LAN_RMBUS_DATACHANGED
-        // Structure: [groupIndex (1 byte), feedback status (10 bytes)]
-        if (payload.length >= 11) {
-          const groupIndex = payload[0];
-          const feedbackStatus = payload.subarray(1, 11); // 10 bytes
-          const feedbacks: { address: number; activeInputs: number[] }[] = [];
-
-          for (let i = 0; i < 10; i++) {
-            const moduleAddress = groupIndex * 10 + (i + 1);
-            const byte = feedbackStatus[i];
-            if (byte) {
-              const activeInputs: number[] = [];
-              for (let bit = 0; bit < 8; bit++) {
-                if (byte & (1 << bit)) {
-                  activeInputs.push(bit + 1);
-                }
-              }
-              feedbacks.push({ address: moduleAddress, activeInputs });
-            }
-          }
-
-          return {
-            type: "feedback",
-            value: feedbacks
-          };
-        }
-        return null;
 
       default:
         return null;
