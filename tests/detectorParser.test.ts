@@ -1,4 +1,5 @@
 import { DetectorParser, decodeLoconetDirection, decodeCanDirection } from "../src/parsers/detectorParser";
+import { FeedbackParser } from "../src/parsers/feedbackParser";
 import { OccupancyResult } from "../src/parsers/parserResult";
 
 describe("DetectorParser — R-BUS (0x80)", () => {
@@ -53,6 +54,52 @@ describe("DetectorParser — R-BUS (0x80)", () => {
 
   it("returns null for an unhandled opcode", () => {
     expect(parser.parse(0x99, Buffer.alloc(11))).toBeNull();
+  });
+});
+
+// Real LAN_RMBUS_DATACHANGED datagrams captured 2026-08-30 from a live Z21
+// (serial 106110) carrying a 2-channel R-BUS occupancy detector at module
+// address 1 (inputs 7 & 8), while DCC loco 210 ran an oval crossing both
+// track sections. Full UDP frame: LenLE(2) | 0x80 0x00 | groupIndex(1) | status[10].
+describe("DetectorParser — R-BUS real-hardware capture", () => {
+  const feedback = new FeedbackParser();
+  const occ = (hex: string) =>
+    (feedback.parse(Buffer.from(hex, "hex")) as OccupancyResult).value.channels.filter((c) => c.occupied);
+
+  it("front section occupied (status byte 0x40) → address 1, channel 7", () => {
+    const result = feedback.parse(Buffer.from("0f0080000040000000000000000000", "hex")) as OccupancyResult;
+    expect(result.type).toBe("occupancy");
+    expect(result.value.bus).toBe("rbus");
+    expect(result.value.channels).toHaveLength(80);
+    expect(result.value.channels.filter((c) => c.occupied)).toEqual([
+      { address: 1, channel: 7, occupied: true },
+    ]);
+  });
+
+  it("loco spanning both sections (status byte 0xC0) → address 1, channels 7 and 8", () => {
+    expect(occ("0f00800000c0000000000000000000")).toEqual([
+      { address: 1, channel: 7, occupied: true },
+      { address: 1, channel: 8, occupied: true },
+    ]);
+  });
+
+  it("rear section only (status byte 0x80) → address 1, channel 8", () => {
+    expect(occ("0f0080000080000000000000000000")).toEqual([
+      { address: 1, channel: 8, occupied: true },
+    ]);
+  });
+
+  it("both sections released (status all zero) → 80 channels, none occupied", () => {
+    const result = feedback.parse(Buffer.from("0f0080000000000000000000000000", "hex")) as OccupancyResult;
+    expect(result.value.channels).toHaveLength(80);
+    expect(result.value.channels.some((c) => c.occupied)).toBe(false);
+  });
+
+  it("getRmbusData(1) response (groupIndex 1) decodes to addresses 11-20", () => {
+    const result = feedback.parse(Buffer.from("0f0080000100000000000000000000", "hex")) as OccupancyResult;
+    expect(result.value.channels).toHaveLength(80);
+    expect(result.value.channels[0]).toEqual({ address: 11, channel: 1, occupied: false });
+    expect(result.value.channels.some((c) => c.occupied)).toBe(false);
   });
 });
 
