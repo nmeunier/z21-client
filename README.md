@@ -21,7 +21,7 @@ Connection to the Z21 command station is performed over the LAN (Ethernet/UDP).
 - Drive engines with speed and direction
 - Read and write CVs (configuration variables)
 - Query status, serial number, and broadcast flags
-- Subscribe to feedback and status updates
+- Subscribe to occupancy, transponder and status updates
 - Fully typed API for Node.js
 - Extensive unit tests
 

@@ -1,5 +1,7 @@
 # Release v2.0.0
 
+Date: 2026-08-30
+
 ## Breaking changes
 
 - The `feedback` event is replaced by `occupancy`. Payload is now
@@ -22,6 +24,8 @@
 - Poll commands: `getRmbusData(groupIndex)`, `getLoconetDetector(type, reportAddress?)`
   (experimental), `getCanDetector(nid?)` (experimental).
 - `FeedbackParser` now parses every dataset in a concatenated UDP datagram.
+- A truncated `LAN_LOCONET_DETECTOR` / `LAN_CAN_DETECTOR` frame now surfaces an
+  `invalid-payload` error event (previously such frames were ignored).
 - Exported `BroadcastFlag` bit constants.
 
 ## Notes

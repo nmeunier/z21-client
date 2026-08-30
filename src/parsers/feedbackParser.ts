@@ -71,6 +71,16 @@ export class FeedbackParser {
       }
       offset += len;
     }
+
+    // A datagram whose first bytes don't form a valid dataset used to raise an
+    // error via parse(); preserve that signal instead of returning silently.
+    if (results.length === 0 && offset < payload.length) {
+      const first = this.parse(payload);
+      if (first && first.type === "error") {
+        return [first];
+      }
+    }
+
     return results;
   }
 }

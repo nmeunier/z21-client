@@ -11,7 +11,7 @@ export function decodeLoconetDirection(b: number): Direction {
   return (b & 0x20) === 0 ? "forward" : "reverse";
 }
 
-/** Decode the 2 direction bits (15..14) of a CAN RailCom loco value. */
+/** Decode the 2 direction bits (15..14) of a CAN RailCom loco value. @experimental not tested on real hardware. */
 export function decodeCanDirection(v: number): Direction {
   const d = (v >> 14) & 0x3;
   if (d === 0b10) return "forward";
@@ -55,7 +55,7 @@ export class DetectorParser {
     return { type: "occupancy", value: { bus: "rbus", channels } };
   }
 
-  /** LAN_LOCONET_DETECTOR (Z21 §9.5). EXPERIMENTAL — not tested on real hardware. */
+  /** LAN_LOCONET_DETECTOR (Z21 §9.5). @experimental not tested on real hardware. */
   private parseLoconet(payload: Buffer): ParserResult | null {
     if (payload.length < 3) {
       return tooShort("LAN_LOCONET_DETECTOR");

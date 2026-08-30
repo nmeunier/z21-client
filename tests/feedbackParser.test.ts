@@ -520,5 +520,23 @@ describe("FeedbackParser.parseAll", () => {
   it("returns [] for an empty buffer", () => {
     expect(parser.parseAll(Buffer.alloc(0))).toEqual([]);
   });
+
+  it("decodes concatenated datasets of different kinds in order", () => {
+    const rbus = Buffer.from([
+      0x0f, 0x00, 0x80, 0x00,
+      0x00, 0x01, 0x00, 0xc5, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ]);
+    const flags = Buffer.from([0x08, 0x00, 0x51, 0x00, 0x07, 0x00, 0x00, 0x00]);
+    const results = parser.parseAll(Buffer.concat([rbus, flags]));
+    expect(results.map((r) => r.type)).toEqual(["occupancy", "broadcastFlags"]);
+  });
+
+  it("emits the parse error for a wholly-malformed datagram", () => {
+    // header claims length 8, only 5 bytes present
+    const results = parser.parseAll(Buffer.from([0x08, 0x00, 0x10, 0x00, 0x01]));
+    expect(results).toEqual([
+      { type: "error", value: { code: "invalid-payload", message: "Payload shorter than expected length" } },
+    ]);
+  });
 });
 

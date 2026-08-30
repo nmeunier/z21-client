@@ -105,7 +105,7 @@ export class SystemController {
   }
 
   /** Poll an R-BUS feedback module group (0 = modules 1-10, 1 = modules 11-20). Z21 §7.2. */
-  public async getRmbusData(groupIndex: number): Promise<void> {
+  public async getRmbusData(groupIndex: 0 | 1): Promise<void> {
     if (groupIndex !== 0 && groupIndex !== 1) {
       throw new RangeError("getRmbusData: groupIndex must be 0 or 1");
     }
@@ -153,6 +153,7 @@ export class SystemController {
     }
     await this.transport.sendCommand([
       ...commands.LAN_CAN_DETECTOR,
+      0x00, // Type 0x00 = request the CAN detector(s) with the given NId
       nid & 0xff,
       (nid >>> 8) & 0xff,
     ]);

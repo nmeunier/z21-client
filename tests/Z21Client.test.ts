@@ -196,13 +196,18 @@ describe("Z21Client", () => {
   describe("feedback poll commands", () => {
     const sent = () => Array.from((mockSocket.send.mock.calls[0][0] as Buffer).subarray(2));
 
+    it("getRmbusData(0) sends [0x81, 0x00, 0x00]", async () => {
+      await client.system.getRmbusData(0);
+      expect(sent()).toEqual([0x81, 0x00, 0x00]);
+    });
+
     it("getRmbusData(1) sends [0x81, 0x00, 0x01]", async () => {
       await client.system.getRmbusData(1);
       expect(sent()).toEqual([0x81, 0x00, 0x01]);
     });
 
     it("getRmbusData rejects an out-of-range group index", async () => {
-      await expect(client.system.getRmbusData(2)).rejects.toThrow(RangeError);
+      await expect(client.system.getRmbusData(2 as 0 | 1)).rejects.toThrow(RangeError);
     });
 
     it("getLoconetDetector(0x80) sends a SIC request with a zero address", async () => {
@@ -215,22 +220,39 @@ describe("Z21Client", () => {
       expect(sent()).toEqual([0xa4, 0x00, 0x81, 0xf8, 0x03]);
     });
 
+    it("getLoconetDetector(0x82, 100) sends the report address unchanged (LE)", async () => {
+      await client.system.getLoconetDetector(0x82, 100); // 100 = 0x0064
+      expect(sent()).toEqual([0xa4, 0x00, 0x82, 0x64, 0x00]);
+    });
+
+    it("getLoconetDetector(0x81, 0) rejects a report address below 1", async () => {
+      await expect(client.system.getLoconetDetector(0x81, 0)).rejects.toThrow(RangeError);
+    });
+
+    it("getLoconetDetector(0x82, 0x1ffff) rejects a report address above uint16", async () => {
+      await expect(client.system.getLoconetDetector(0x82, 0x1_ffff)).rejects.toThrow(RangeError);
+    });
+
     it("getLoconetDetector rejects an unknown query type", async () => {
       await expect(client.system.getLoconetDetector(0x99 as any)).rejects.toThrow(RangeError);
     });
 
     it("getCanDetector() defaults to NID 0xD000 (all detectors)", async () => {
       await client.system.getCanDetector();
-      expect(sent()).toEqual([0xc4, 0x00, 0x00, 0xd0]);
+      expect(sent()).toEqual([0xc4, 0x00, 0x00, 0x00, 0xd0]);
     });
 
     it("getCanDetector(0xC201) sends the NID little endian", async () => {
       await client.system.getCanDetector(0xc201);
-      expect(sent()).toEqual([0xc4, 0x00, 0x01, 0xc2]);
+      expect(sent()).toEqual([0xc4, 0x00, 0x00, 0x01, 0xc2]);
     });
 
     it("getCanDetector rejects a non-uint16 NID", async () => {
       await expect(client.system.getCanDetector(0x1_ffff)).rejects.toThrow(RangeError);
+    });
+
+    it("getCanDetector(-1) rejects a negative NID", async () => {
+      await expect(client.system.getCanDetector(-1)).rejects.toThrow(RangeError);
     });
   });
 
