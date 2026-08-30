@@ -12,6 +12,10 @@ export const commands = {
   LAN_X_TRACK_POWER_OFF: [0x40, 0x00, 0x21, 0x80, 0xa1],
   LAN_X_TRACK_POWER_ON: [0x40, 0x00, 0x21, 0x81, 0xa0],
   LAN_X_SET_STOP: [0x40, 0x00, 0x80, 0x80],
+
+  LAN_RMBUS_GETDATA: [0x81, 0x00],
+  LAN_LOCONET_DETECTOR: [0xa4, 0x00],
+  LAN_CAN_DETECTOR: [0xc4, 0x00],
 };
 
 /** Bit values for LAN_SET_BROADCASTFLAGS (Z21 §2.16), 32-bit little endian on the wire. */

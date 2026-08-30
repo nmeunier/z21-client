@@ -193,4 +193,45 @@ describe("Z21Client", () => {
     await expect(client.system.setBroadcastFlags(0x1_0000_0000)).rejects.toThrow(RangeError);
   });
 
+  describe("feedback poll commands", () => {
+    const sent = () => Array.from((mockSocket.send.mock.calls[0][0] as Buffer).subarray(2));
+
+    it("getRmbusData(1) sends [0x81, 0x00, 0x01]", async () => {
+      await client.system.getRmbusData(1);
+      expect(sent()).toEqual([0x81, 0x00, 0x01]);
+    });
+
+    it("getRmbusData rejects an out-of-range group index", async () => {
+      await expect(client.system.getRmbusData(2)).rejects.toThrow(RangeError);
+    });
+
+    it("getLoconetDetector(0x80) sends a SIC request with a zero address", async () => {
+      await client.system.getLoconetDetector(0x80);
+      expect(sent()).toEqual([0xa4, 0x00, 0x80, 0x00, 0x00]);
+    });
+
+    it("getLoconetDetector(0x81, 1017) sends the report address decremented by 1", async () => {
+      await client.system.getLoconetDetector(0x81, 1017); // 1016 = 0x03F8
+      expect(sent()).toEqual([0xa4, 0x00, 0x81, 0xf8, 0x03]);
+    });
+
+    it("getLoconetDetector rejects an unknown query type", async () => {
+      await expect(client.system.getLoconetDetector(0x99 as any)).rejects.toThrow(RangeError);
+    });
+
+    it("getCanDetector() defaults to NID 0xD000 (all detectors)", async () => {
+      await client.system.getCanDetector();
+      expect(sent()).toEqual([0xc4, 0x00, 0x00, 0xd0]);
+    });
+
+    it("getCanDetector(0xC201) sends the NID little endian", async () => {
+      await client.system.getCanDetector(0xc201);
+      expect(sent()).toEqual([0xc4, 0x00, 0x01, 0xc2]);
+    });
+
+    it("getCanDetector rejects a non-uint16 NID", async () => {
+      await expect(client.system.getCanDetector(0x1_ffff)).rejects.toThrow(RangeError);
+    });
+  });
+
 });
