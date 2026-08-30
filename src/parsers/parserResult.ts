@@ -129,6 +129,37 @@ export interface FeedbackResult {
     value: FeedbackModuleStatus[];
 }
 
+// Detector results (R-BUS / LocoNet / CAN)
+export type FeedbackBus = "rbus" | "loconet" | "can";
+export type TransponderBus = "loconet" | "can";
+export type Direction = "forward" | "reverse" | "unknown";
+
+export interface OccupancyChannel {
+    address: number;   // R-BUS: module 1..20 | LocoNet: feedback address | CAN: configurable module Addr
+    channel: number;   // R-BUS: input 1..8   | LocoNet: 0                | CAN: port 0..7
+    occupied: boolean;
+    nid?: number;       // CAN only: hardware CAN network id
+}
+
+export interface OccupancyResult {
+    type: "occupancy";
+    value: { bus: FeedbackBus; channels: OccupancyChannel[] };
+}
+
+// EXPERIMENTAL — not tested on real hardware
+export interface TransponderChannel {
+    address: number;
+    channel: number;
+    nid?: number;       // CAN only
+    locoAddress: number;
+    direction: Direction;
+    present: boolean;   // LocoNet enter=true / exit=false ; CAN & LISSY: true
+}
+
+export interface TransponderResult {
+    type: "transponder";
+    value: { bus: TransponderBus; channels: TransponderChannel[] };
+}
 
 /**
  * Union type for all possible results
@@ -147,4 +178,6 @@ export type ParserResult =
     | ExtAccessoryInfoResult
     | EngineInfoResult
     | CvResult
-    | FeedbackResult;
+    | FeedbackResult
+    | OccupancyResult
+    | TransponderResult;
