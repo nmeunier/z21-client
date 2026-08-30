@@ -1,7 +1,7 @@
 {
   "name": "z21-client",
   "version": "2.0.0",
-  "description": "TypeScript UDP client for Roco/Fleischmann Z21 DCC command station",
+  "description": "TypeScript library implementing the Roco/Fleischmann Z21 LAN protocol (Ethernet/UDP)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
@@ -19,18 +19,11 @@
     "test:coverage": "jest --coverage"
   },
   "keywords": [
-    "dcc",
     "z21",
     "roco",
     "fleischmann",
+    "dcc",
     "model-railway",
-    "model-train",
-    "train-control",
-    "locomotive",
-    "turnout",
-    "accessory",
-    "decoder",
-    "cv",
     "typescript",
     "nodejs"
   ],
