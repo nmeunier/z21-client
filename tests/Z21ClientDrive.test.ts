@@ -52,6 +52,30 @@ describe("Z21Client", () => {
     expect(actual).toEqual(expected);
   });
 
+  it("setDriveEngine resolves once the datagram is sent", async () => {
+    await expect(client.engines.setDriveEngine(3, 10, true)).resolves.toBeUndefined();
+  });
+
+  it("setDriveEngine rejects with the send error when the datagram cannot leave", async () => {
+    const failure = new Error("EHOSTUNREACH");
+    mockSocket.send.mockImplementation((_b: Buffer, _p: number, _h: string, cb: (err: Error | null) => void) => cb(failure));
+    await expect(client.engines.setDriveEngine(3, 10, true)).rejects.toBe(failure);
+  });
+
+  it("setDriveEngine fired and forgotten never leaves an unhandled rejection", async () => {
+    mockSocket.send.mockImplementation((_b: Buffer, _p: number, _h: string, cb: (err: Error | null) => void) => cb(new Error("ENETDOWN")));
+    const unhandled = jest.fn();
+    process.on("unhandledRejection", unhandled);
+    try {
+      void client.engines.setDriveEngine(3, 10, true); // nobody awaits it
+      await new Promise((resolve) => setImmediate(resolve));
+      await new Promise((resolve) => setImmediate(resolve));
+      expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+      process.off("unhandledRejection", unhandled);
+    }
+  });
+
   it("should send a UDP packet to activate F0 for engine 1234", async () => {
     await client.engines.setEngineFunctions(1234, 0, "on");
     expect(mockSocket.send).toHaveBeenCalledTimes(1);

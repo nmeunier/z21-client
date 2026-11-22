@@ -59,11 +59,18 @@ export class EngineController {
 
   /**
    * Drive an engine with speed and direction.
+   *
+   * Returns the promise of the send. It resolves as soon as the UDP datagram has left the
+   * machine: it does not wait for any answer from the Z21 (the engine state comes back through
+   * the broadcasts). It rejects only on a local send failure (socket closed, no network
+   * route). A resolved promise does not mean the Z21 received or applied the command: only a
+   * broadcast tells that. Awaiting it is optional: fire-and-forget is safe, a rejection nobody handles
+   * never surfaces as an unhandled rejection (which would end a Node process).
    * @param address Engine address (1-10239)
    * @param speed Speed value (0-127)
    * @param forward Direction (true=forward, false=backward)
    */
-  setDriveEngine(address: number, speed: number, forward: boolean, engineSpeedSteps: number = 128): void {
+  setDriveEngine(address: number, speed: number, forward: boolean, engineSpeedSteps: number = 128): Promise<void> {
     // --- Build XpressNet engine control frame ---
     const addrL = address & 0xFF;                  // Low byte of engine address
     const addrH = (address >> 8) & 0x3F;           // High byte (14-bit address max)
@@ -91,7 +98,11 @@ export class EngineController {
     const payload = [0x40, 0x00, ...xpressNetFrame];
 
     // --- Build complete Z21 frame and send ---
-    this.transport.sendCommand(payload);
+    const sent = this.transport.sendCommand(payload);
+    // Observed here, so that a caller who does not await it cannot crash the process; the
+    // promise returned still rejects for a caller who does.
+    sent.catch(() => undefined);
+    return sent;
   }
 
   /**

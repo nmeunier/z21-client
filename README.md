@@ -112,7 +112,7 @@ new Z21Client(host: string, port?: number, debug?: boolean)
 ### Engine Controller
 
 - `engines.getEngineInfo(address: number)`: Request information about an engine and subscribe to updates
-- `engines.setDriveEngine(address: number, speed: number, forward: boolean, engineSpeedSteps?: number)`: Drive an engine with speed and direction (speed steps: 14, 28, or 128)
+- `engines.setDriveEngine(address: number, speed: number, forward: boolean, engineSpeedSteps?: number): Promise<void>`: Drive an engine with speed and direction (speed steps: 14, 28, or 128). The promise resolves once the datagram is sent (it does not wait for the Z21's answer, which comes through the broadcasts) and rejects only on a local send failure; a resolved promise does not mean the Z21 received the command. Awaiting it is optional: an ignored failure never becomes an unhandled rejection.
 - `engines.setEngineFunctions(address: number, functionNumber: number, state: "on" | "off" | "toggle")`: Set a function state on an engine (F1-F28)
 - `engines.cvRead(cv: number)`: Read a CV in direct mode
 - `engines.cvWrite(cv: number, value: number)`: Write a CV in direct mode
